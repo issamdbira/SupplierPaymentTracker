@@ -1,17 +1,21 @@
 import { 
   type User, type InsertUser, 
   type Supplier, type InsertSupplier,
+  type Customer, type InsertCustomer,
   type Invoice, type InsertInvoice,
+  type Receivable, type InsertReceivable,
   type Installment, type InsertInstallment,
+  type BankTransaction, type InsertBankTransaction,
   type Activity, type InsertActivity
 } from "@shared/schema";
 
 // Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(userData: InsertUser): Promise<User>;
 
   // Supplier methods
   getSupplier(id: number): Promise<Supplier | undefined>;
@@ -20,7 +24,14 @@ export interface IStorage {
   updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
   deleteSupplier(id: number): Promise<boolean>;
 
-  // Invoice methods
+  // Customer methods
+  getCustomer(id: number): Promise<Customer | undefined>;
+  getCustomers(): Promise<Customer[]>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
+  deleteCustomer(id: number): Promise<boolean>;
+
+  // Invoice methods (Supplier payments)
   getInvoice(id: number): Promise<Invoice | undefined>;
   getInvoiceWithInstallments(id: number): Promise<{invoice: Invoice, installments: Installment[]} | undefined>;
   getInvoices(): Promise<Invoice[]>;
@@ -29,7 +40,15 @@ export interface IStorage {
   updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
   deleteInvoice(id: number): Promise<boolean>;
 
-  // Installment methods
+  // Receivable methods (Customer payments)
+  getReceivable(id: number): Promise<Receivable | undefined>;
+  getReceivables(): Promise<Receivable[]>;
+  getPendingReceivables(): Promise<Receivable[]>;
+  createReceivable(receivable: InsertReceivable): Promise<Receivable>;
+  updateReceivable(id: number, receivable: Partial<InsertReceivable>): Promise<Receivable | undefined>;
+  deleteReceivable(id: number): Promise<boolean>;
+
+  // Installment methods (for both invoice and receivable installments)
   getInstallment(id: number): Promise<Installment | undefined>;
   getInstallmentsByInvoice(invoiceId: number): Promise<Installment[]>;
   getUpcomingInstallments(): Promise<Installment[]>;
@@ -38,6 +57,14 @@ export interface IStorage {
   updateInstallment(id: number, installment: Partial<InsertInstallment>): Promise<Installment | undefined>;
   deleteInstallment(id: number): Promise<boolean>;
   deleteInstallmentsByInvoice(invoiceId: number): Promise<boolean>;
+
+  // Bank Transaction methods
+  getBankTransaction(id: number): Promise<BankTransaction | undefined>;
+  getBankTransactions(from?: Date, to?: Date): Promise<BankTransaction[]>;
+  createBankTransaction(transaction: InsertBankTransaction): Promise<BankTransaction>;
+  createBankTransactions(transactions: InsertBankTransaction[]): Promise<BankTransaction[]>;
+  updateBankTransaction(id: number, transaction: Partial<InsertBankTransaction>): Promise<BankTransaction | undefined>;
+  deleteBankTransaction(id: number): Promise<boolean>;
 
   // Activity methods
   getActivity(id: number): Promise<Activity | undefined>;
@@ -50,9 +77,14 @@ export interface IStorage {
     upcomingPayments: number;
     pendingAmount: number;
     dueInvoices: number;
+    customerCount: number;
+    receivableCount: number;
+    pendingReceivableAmount: number;
   }>;
   getFinancialForecast(): Promise<{month: string, amount: number}[]>;
   getSupplierDistribution(): Promise<{name: string, amount: number}[]>;
+  getCustomerDistribution(): Promise<{name: string, amount: number}[]>;
+  getCashFlowForecast(): Promise<{month: string, income: number, expense: number}[]>;
 }
 
 // In-memory implementation
