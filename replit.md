@@ -1,8 +1,8 @@
-# FinancePro: Invoice and Payment Management System
+# Gesto: Invoice and Payment Management System
 
 ## Overview
 
-FinancePro is a full-stack web application for managing supplier invoices, payments, and financial tracking. The application allows users to track invoices, plan payments through installments, manage suppliers, and view financial analytics through a dashboard.
+Gesto is a full-stack web application for managing supplier invoices, payments, and financial tracking. The application allows users to track invoices, plan payments through installments, manage suppliers, and view financial analytics through a dashboard.
 
 The application is built using a React frontend with a Node.js Express backend. It uses a PostgreSQL database with Drizzle ORM for data management and features a modern UI built with Tailwind CSS and Radix UI components.
 

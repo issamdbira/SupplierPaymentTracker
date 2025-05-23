@@ -60,7 +60,7 @@ const FinancialSituation: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Situation Financière | FinancePro</title>
+        <title>Situation Financière | Gesto</title>
         <meta name="description" content="Analysez votre situation financière complète, incluant les flux de trésorerie et les prévisions de décaissement." />
       </Helmet>
       

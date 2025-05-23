@@ -16,7 +16,7 @@ const SettingsPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Paramètres | FinancePro</title>
+        <title>Paramètres | Gesto</title>
         <meta name="description" content="Configurez vos préférences et personnalisez votre expérience sur la plateforme de gestion des décaissements." />
       </Helmet>
       

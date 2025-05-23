@@ -15,7 +15,7 @@ export default function WelcomePage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm py-6">
         <div className="container mx-auto px-4">
-          <h1 className="text-2xl font-bold text-orange-600">FinancePro</h1>
+          <h1 className="text-2xl font-bold text-orange-600">Gesto</h1>
         </div>
       </header>
 
@@ -137,7 +137,7 @@ export default function WelcomePage() {
 
       <footer className="bg-gray-800 text-white py-6">
         <div className="container mx-auto px-4 text-center">
-          <p>© 2025 FinancePro - Plateforme de gestion financière</p>
+          <p>© 2025 Gesto - Plateforme de gestion financière</p>
         </div>
       </footer>
     </div>
