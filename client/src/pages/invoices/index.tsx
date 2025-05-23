@@ -43,27 +43,27 @@ function InvoicesPage() {
   const overdueCount = sampleInvoices.filter(inv => inv.status === 'overdue').length;
 
   return (
-    <div className="ey-page p-6">
+    <div className="page-custom p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header avec style Ernst & Young */}
-        <div className="ey-header rounded-lg p-6">
+        {/* Header */}
+        <div className="header-custom rounded-lg p-6">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestion des Factures</h1>
+              <h1 className="text-3xl font-bold text-gray-700">Gestion des Factures</h1>
               <p className="text-gray-600 mt-2">
                 Gérez vos factures fournisseurs et planifiez vos paiements
               </p>
             </div>
-            <Button className="ey-button">
+            <Button className="btn-primary">
               <Plus className="h-4 w-4 mr-2" />
               Nouvelle Facture
             </Button>
           </div>
         </div>
 
-        {/* Cartes de statistiques avec style EY */}
+        {/* Cartes de statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="ey-card">
+          <Card className="card-custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total des Factures</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -74,7 +74,7 @@ function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card className="ey-card">
+          <Card className="card-custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">En Attente</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -85,7 +85,7 @@ function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card className="ey-card">
+          <Card className="card-custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Montant Total</CardTitle>
               <Euro className="h-4 w-4 text-muted-foreground" />
@@ -96,7 +96,7 @@ function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card className="ey-card">
+          <Card className="card-custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">En Retard</CardTitle>
               <Calendar className="h-4 w-4 text-red-500" />
@@ -108,8 +108,8 @@ function InvoicesPage() {
           </Card>
         </div>
 
-        {/* Recherche avec style EY */}
-        <Card className="ey-card">
+        {/* Recherche */}
+        <Card className="card-custom">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
               <div className="relative flex-1">
@@ -121,7 +121,7 @@ function InvoicesPage() {
                   className="pl-10"
                 />
               </div>
-              <Button variant="outline" className="ey-button">
+              <Button variant="outline" className="btn-primary">
                 <Filter className="h-4 w-4 mr-2" />
                 Filtres
               </Button>
@@ -129,8 +129,8 @@ function InvoicesPage() {
           </CardContent>
         </Card>
 
-        {/* Liste des factures avec style EY */}
-        <Card className="ey-card">
+        {/* Liste des factures */}
+        <Card className="card-custom">
           <CardHeader>
             <CardTitle>Liste des Factures</CardTitle>
             <CardDescription>
@@ -144,9 +144,9 @@ function InvoicesPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4">
-                        <h3 className="font-medium">{invoice.number}</h3>
+                        <h3 className="font-medium text-gray-700">{invoice.number}</h3>
                         <p className="text-gray-600">{invoice.supplier}</p>
-                        <p className="font-semibold text-lg">{formatCurrency(invoice.amount)}</p>
+                        <p className="font-semibold text-lg text-gray-700">{formatCurrency(invoice.amount)}</p>
                         {getStatusBadge(invoice.status)}
                       </div>
                       <div className="mt-2 text-sm text-gray-500">
@@ -154,7 +154,7 @@ function InvoicesPage() {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button size="sm" className="ey-button">
+                      <Button size="sm" className="btn-primary">
                         Planifier
                       </Button>
                       <Button size="sm" variant="outline">
@@ -164,18 +164,6 @@ function InvoicesPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Message de démonstration du style EY */}
-        <Card className="ey-card border-yellow-200 bg-yellow-50">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <p className="text-gray-700">
-                <strong>Style Ernst & Young appliqué !</strong> Background gris clair, boutons jaune-orange et interface professionnelle.
-              </p>
             </div>
           </CardContent>
         </Card>
