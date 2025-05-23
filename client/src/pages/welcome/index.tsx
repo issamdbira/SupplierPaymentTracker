@@ -1,145 +1,167 @@
 import { useLocation } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Users, FileText, CreditCard, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  TrendingUp, 
+  User,
+  ArrowRight
+} from "lucide-react";
+import { useState } from "react";
 
 export default function WelcomePage() {
   const [_, setLocation] = useLocation();
-  
-  // Function to navigate to a new route
-  const navigate = (path: string) => {
-    setLocation(path);
+  const [isLogin, setIsLogin] = useState(true);
+
+  const handleAuth = () => {
+    // Pour la démonstration, rediriger directement vers l'application
+    setLocation("/suppliers");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white shadow-sm py-6">
-        <div className="container mx-auto px-4">
-          <h1 className="text-2xl font-bold text-orange-600">Gesto</h1>
-        </div>
-      </header>
+    <div className="min-h-screen page-custom flex">
+      {/* Côté gauche - Authentification */}
+      <div className="w-1/2 flex items-center justify-center p-8">
+        <Card className="card-custom w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">
+              <h1 className="text-3xl font-bold text-orange-600 mb-2">Gesto</h1>
+              <p className="text-gray-600">Plateforme de gestion d'entreprise</p>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex justify-center mb-6">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    isLogin ? "bg-white shadow-sm" : "text-gray-500"
+                  }`}
+                  onClick={() => setIsLogin(true)}
+                >
+                  Connexion
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    !isLogin ? "bg-white shadow-sm" : "text-gray-500"
+                  }`}
+                  onClick={() => setIsLogin(false)}
+                >
+                  Inscription
+                </button>
+              </div>
+            </div>
 
-      <main className="flex-grow container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold mb-4">Gestion financière des décaissements et encaissements</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              Une plateforme complète pour gérer vos paiements fournisseurs et vos encaissements clients
+            <div className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Nom complet</label>
+                  <Input placeholder="Votre nom complet" />
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <Input type="email" placeholder="votre@email.com" />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Mot de passe</label>
+                <Input type="password" placeholder="••••••••" />
+              </div>
+
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
+                  <Input type="password" placeholder="••••••••" />
+                </div>
+              )}
+            </div>
+
+            <Button 
+              className="btn-primary w-full"
+              onClick={handleAuth}
+            >
+              {isLogin ? "Se connecter" : "S'inscrire"}
+            </Button>
+
+            {isLogin && (
+              <div className="text-center">
+                <a href="#" className="text-sm text-gray-500 hover:text-orange-600">
+                  Mot de passe oublié ?
+                </a>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Côté droit - Accès simple et élégant */}
+      <div className="w-1/2 flex items-center justify-center p-8">
+        <div className="text-center space-y-8">
+          {/* Hero Section */}
+          <div className="space-y-4">
+            <h2 className="text-4xl font-bold text-gray-700">
+              Gestion Financière
+            </h2>
+            <p className="text-xl text-gray-600 max-w-md mx-auto">
+              Optimisez votre trésorerie et pilotez vos flux financiers en toute simplicité
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Suppliers Card */}
-            <Card className="border-2 border-orange-200 hover:border-orange-500 transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 pb-6">
-                <CardTitle className="text-2xl text-orange-800 flex items-center gap-2">
-                  <Users className="h-6 w-6" /> 
-                  Gestion Fournisseurs
-                </CardTitle>
-                <CardDescription className="text-orange-700 text-base">
-                  Gérez toutes vos factures et paiements fournisseurs
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <span>Planification des échéances de paiement</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <span>Suivi des factures et des paiements</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <span>Rapports financiers détaillés</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <span>Vérification des paiements bancaires</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                  onClick={() => navigate('/suppliers')}
-                >
-                  Accéder aux fournisseurs
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Module Trésorerie mis en avant */}
+          <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-orange-200 max-w-sm mx-auto">
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-orange-600" />
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-gray-700 mb-3">
+              Module Trésorerie
+            </h3>
+            
+            <p className="text-gray-600 mb-6">
+              Gérez vos décaissements, planifiez vos paiements et suivez vos échéances
+            </p>
 
-            {/* Customers Card */}
-            <Card className="border-2 border-blue-200 hover:border-blue-500 transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 pb-6">
-                <CardTitle className="text-2xl text-blue-800 flex items-center gap-2">
-                  <Users className="h-6 w-6" /> 
-                  Gestion Clients
-                </CardTitle>
-                <CardDescription className="text-blue-700 text-base">
-                  Suivez toutes vos créances et encaissements
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <span>Gestion des créances clients</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <span>Planification des encaissements</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <span>Suivi des paiements reçus</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <span>Prévisions de trésorerie</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => navigate('/customers')}
-                >
-                  Accéder aux clients
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="space-y-3 text-left mb-6">
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                Facturation fournisseurs
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                Planification des paiements
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                Tableaux de bord financiers
+              </div>
+            </div>
+
+            <Button 
+              className="btn-primary w-full"
+              onClick={() => setLocation("/suppliers")}
+            >
+              Accéder au module
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
 
-          <div className="text-center mt-12">
-            <h3 className="text-xl font-semibold mb-4">Fonctionnalités principales</h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="text-center p-6">
-                <FileText className="mx-auto h-10 w-10 text-orange-500 mb-3" />
-                <h4 className="font-bold mb-2">Factures et Échéanciers</h4>
-                <p className="text-sm text-gray-600">Gérez facilement vos factures et planifiez vos paiements en plusieurs échéances</p>
-              </Card>
-              
-              <Card className="text-center p-6">
-                <CreditCard className="mx-auto h-10 w-10 text-orange-500 mb-3" />
-                <h4 className="font-bold mb-2">Suivi bancaire</h4>
-                <p className="text-sm text-gray-600">Importez vos relevés bancaires pour vérifier les paiements effectués</p>
-              </Card>
-              
-              <Card className="text-center p-6">
-                <Users className="mx-auto h-10 w-10 text-orange-500 mb-3" />
-                <h4 className="font-bold mb-2">Comptabilité</h4>
-                <p className="text-sm text-gray-600">Intégration avec les logiciels de comptabilité pour le lettrage des transactions</p>
-              </Card>
+          {/* Mention discrète des autres modules */}
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              D'autres modules arrivent prochainement
+            </p>
+            <div className="flex justify-center space-x-2 mt-2">
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
             </div>
           </div>
         </div>
-      </main>
-
-      <footer className="bg-gray-800 text-white py-6">
-        <div className="container mx-auto px-4 text-center">
-          <p>© 2025 Gesto - Plateforme de gestion financière</p>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }
