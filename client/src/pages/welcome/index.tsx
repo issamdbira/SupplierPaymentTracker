@@ -137,6 +137,10 @@ export default function WelcomePage() {
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
                 Tableaux de bord financiers
               </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                10 traites PDF gratuites par jour
+              </div>
             </div>
 
             <Button 

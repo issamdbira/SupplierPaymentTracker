@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   return (
     <div className="flex flex-col w-64 bg-sidebar border-r border-gray-light">
       <div className="flex items-center justify-between h-16 px-4 bg-sidebar border-b border-gray-light">
-        <h1 className="text-lg font-semibold text-sidebar-foreground">FinancePro</h1>
+        <h1 className="text-lg font-semibold text-sidebar-foreground">Gesto</h1>
         <button 
           className="p-1 rounded-full md:hidden text-gray-medium hover:bg-gray-light"
           onClick={onClose}
