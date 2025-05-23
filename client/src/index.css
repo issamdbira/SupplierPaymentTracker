@@ -3,9 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 98%;
+  /* Ernst & Young Theme - Light Gray Background */
+  --background: 210 20% 96%;
   --foreground: 20 14.3% 4.1%;
-  --muted: 60 4.8% 97%;
+  --muted: 210 15% 92%;
   --muted-foreground: 25 5.3% 44.7%;
   --popover: 0 0% 100%;
   --popover-foreground: 20 14.3% 4.1%;
@@ -13,29 +14,36 @@
   --card-foreground: 20 14.3% 4.1%;
   --border: 20 5.9% 92%;
   --input: 20 5.9% 92%;
-  --primary: 35 100% 50%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 60 4.8% 97%;
+  /* EY Yellow-Orange Primary */
+  --primary: 45 100% 55%;
+  --primary-foreground: 20 14.3% 4.1%;
+  --secondary: 210 15% 92%;
   --secondary-foreground: 24 9.8% 10%;
-  --accent: 60 4.8% 97%;
+  --accent: 210 15% 92%;
   --accent-foreground: 24 9.8% 10%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
-  --ring: 35 91% 50%;
+  --ring: 45 100% 55%;
   --radius: 0.5rem;
-  --chart-1: 207 90% 54%;
-  --chart-2: 35 100% 50%;
+  --chart-1: 45 100% 55%;
+  --chart-2: 25 95% 53%;
   --chart-3: 160 84% 39%;
   --chart-4: 0 84% 60%;
   --chart-5: 258 90% 66%;
   --sidebar-background: 0 0% 100%;
   --sidebar-foreground: 20 14.3% 4.1%;
-  --sidebar-primary: 35 100% 50%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 0 0% 96%;
+  --sidebar-primary: 45 100% 55%;
+  --sidebar-primary-foreground: 20 14.3% 4.1%;
+  --sidebar-accent: 210 15% 96%;
   --sidebar-accent-foreground: 24 9.8% 10%;
   --sidebar-border: 20 5.9% 92%;
-  --sidebar-ring: 35 91% 50%;
+  --sidebar-ring: 45 100% 55%;
+  
+  /* EY Custom Colors */
+  --ey-yellow: 45 100% 55%;
+  --ey-orange: 25 95% 53%;
+  --ey-gray: 210 20% 96%;
+  --ey-dark-gray: 215 16% 47%;
 }
 
 .dark {
@@ -101,5 +109,23 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  .ey-button {
+    @apply bg-[hsl(var(--ey-yellow))] hover:bg-[hsl(var(--ey-orange))] text-black font-medium transition-colors;
+  }
+  
+  .ey-card {
+    @apply bg-white border border-gray-200 shadow-sm rounded-lg;
+  }
+  
+  .ey-header {
+    @apply bg-white border-b border-gray-200;
+  }
+  
+  .ey-page {
+    @apply bg-[hsl(var(--ey-gray))] min-h-screen;
   }
 }
