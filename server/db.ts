@@ -1,3 +1,15 @@
+import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import path from "path";
+
+// --- fix __dirname dans ES modules ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+console.log("DATABASE_URL =", process.env.DATABASE_URL);
+
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";

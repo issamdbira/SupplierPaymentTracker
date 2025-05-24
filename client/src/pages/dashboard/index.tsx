@@ -10,7 +10,7 @@ const Dashboard: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Tableau de Bord | FinancePro</title>
+        <title>Tableau de Bord | Gesto</title>
         <meta name="description" content="Tableau de bord financier - gérez vos décaissements fournisseurs, factures et paiements à venir." />
       </Helmet>
       

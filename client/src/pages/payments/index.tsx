@@ -174,7 +174,7 @@ const PaymentsPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Décaissements | FinancePro</title>
+        <title>Décaissements | Gesto</title>
         <meta name="description" content="Gérez vos échéances de paiement et suivez les décaissements planifiés." />
       </Helmet>
       

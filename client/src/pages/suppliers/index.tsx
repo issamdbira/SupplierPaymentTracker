@@ -234,7 +234,7 @@ const SuppliersPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Fournisseurs | FinancePro</title>
+        <title>Fournisseurs | Gesto</title>
         <meta name="description" content="Gérez la liste de vos fournisseurs, ajoutez de nouveaux contacts et suivez vos relations commerciales." />
       </Helmet>
       
