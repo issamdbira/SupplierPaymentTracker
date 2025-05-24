@@ -9,6 +9,9 @@ import FinancialSituation from "@/pages/financial-situation";
 import Invoices from "@/pages/invoices";
 import Payments from "@/pages/payments";
 import Suppliers from "@/pages/suppliers";
+import Customers from "@/pages/customers";
+import CustomerDashboard from "@/pages/customers/dashboard";
+import CustomerReceivables from "@/pages/customers/receivables";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import WelcomePage from "@/pages/welcome";
@@ -38,9 +41,9 @@ function Router() {
         <Route path="/suppliers/payments" component={Payments} />
         <Route path="/suppliers" component={Suppliers} />
         <Route path="/suppliers/dashboard" component={Dashboard} />
-        <Route path="/customers" component={NotFound} /> {/* Placeholder for customer module */}
-        <Route path="/customers/dashboard" component={NotFound} /> {/* Placeholder for customer dashboard */}
-        <Route path="/customers/receivables" component={NotFound} /> {/* Placeholder for receivables */}
+        <Route path="/customers" component={Customers} />
+        <Route path="/customers/dashboard" component={CustomerDashboard} />
+        <Route path="/customers/receivables" component={CustomerReceivables} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

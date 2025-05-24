@@ -7,7 +7,8 @@ import {
   Wallet,
   Users,
   Settings,
-  X
+  X,
+  UserRound
 } from "lucide-react";
 
 interface SidebarProps {
@@ -18,13 +19,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const [location] = useLocation();
 
   const isActive = (path: string) => {
-    return location === path;
+    return location === path || location.startsWith(path + "/");
   };
 
   const sidebarLinks = [
     {
       name: "Tableau de Bord",
-      path: "/",
+      path: "/dashboard",
       icon: <LayoutDashboard className="w-5 h-5 mr-3 text-gray-medium" />,
     },
     {
@@ -46,6 +47,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       name: "Fournisseurs",
       path: "/suppliers",
       icon: <Users className="w-5 h-5 mr-3 text-gray-medium" />,
+    },
+    {
+      name: "Clients",
+      path: "/customers",
+      icon: <UserRound className="w-5 h-5 mr-3 text-gray-medium" />,
     },
     {
       name: "Paramètres",

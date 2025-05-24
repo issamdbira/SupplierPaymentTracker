@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertInstallmentSchema, insertSupplierSchema, insertInvoiceSchema, insertActivitySchema } from "@shared/schema";
+import { insertInstallmentSchema, insertSupplierSchema, insertInvoiceSchema, insertActivitySchema, insertCustomerSchema, insertReceivableSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -33,6 +33,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch supplier distribution' });
+    }
+  });
+
+  app.get('/api/dashboard/customer-distribution', async (req, res) => {
+    try {
+      const data = await storage.getCustomerDistribution();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch customer distribution' });
     }
   });
 
@@ -145,6 +154,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: result });
     } catch (error) {
       res.status(500).json({ message: 'Failed to delete supplier' });
+    }
+  });
+
+  // Customer endpoints
+  app.get('/api/customers', async (req, res) => {
+    try {
+      const customers = await storage.getCustomers();
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch customers' });
+    }
+  });
+
+  app.get('/api/customers/:id', async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      if (isNaN(customerId)) {
+        return res.status(400).json({ message: 'Invalid customer ID' });
+      }
+
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch customer' });
+    }
+  });
+
+  app.post('/api/customers', async (req, res) => {
+    try {
+      const validatedData = insertCustomerSchema.parse(req.body);
+      const customer = await storage.createCustomer(validatedData);
+      
+      // Log activity
+      await storage.createActivity({
+        userId: 1, // Assuming admin user for now
+        action: 'create',
+        resourceType: 'customer',
+        resourceId: customer.id,
+        details: `a créé un nouveau client ${customer.name}`
+      });
+      
+      res.status(201).json(customer);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid customer data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to create customer' });
+    }
+  });
+
+  app.put('/api/customers/:id', async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      if (isNaN(customerId)) {
+        return res.status(400).json({ message: 'Invalid customer ID' });
+      }
+
+      const validatedData = insertCustomerSchema.partial().parse(req.body);
+      const updatedCustomer = await storage.updateCustomer(customerId, validatedData);
+      
+      if (!updatedCustomer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      // Log activity
+      await storage.createActivity({
+        userId: 1, // Assuming admin user for now
+        action: 'update',
+        resourceType: 'customer',
+        resourceId: customerId,
+        details: `a modifié le client ${updatedCustomer.name}`
+      });
+      
+      res.json(updatedCustomer);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid customer data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to update customer' });
+    }
+  });
+
+  app.delete('/api/customers/:id', async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      if (isNaN(customerId)) {
+        return res.status(400).json({ message: 'Invalid customer ID' });
+      }
+
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      const result = await storage.deleteCustomer(customerId);
+      
+      // Log activity
+      await storage.createActivity({
+        userId: 1, // Assuming admin user for now
+        action: 'delete',
+        resourceType: 'customer',
+        resourceId: customerId,
+        details: `a supprimé le client ${customer.name}`
+      });
+      
+      res.json({ success: result });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete customer' });
     }
   });
 
@@ -291,6 +412,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: result });
     } catch (error) {
       res.status(500).json({ message: 'Failed to delete invoice' });
+    }
+  });
+
+  // Receivable endpoints
+  app.get('/api/receivables', async (req, res) => {
+    try {
+      const receivables = await storage.getReceivables();
+      res.json(receivables);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch receivables' });
+    }
+  });
+
+  app.get('/api/receivables/pending', async (req, res) => {
+    try {
+      const receivables = await storage.getPendingReceivables();
+      res.json(receivables);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch pending receivables' });
+    }
+  });
+
+  app.get('/api/receivables/:id', async (req, res) => {
+    try {
+      const receivableId = parseInt(req.params.id);
+      if (isNaN(receivableId)) {
+        return res.status(400).json({ message: 'Invalid receivable ID' });
+      }
+
+      const receivable = await storage.getReceivable(receivableId);
+      if (!receivable) {
+        return res.status(404).json({ message: 'Receivable not found' });
+      }
+
+      res.json(receivable);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch receivable' });
+    }
+  });
+
+  app.post('/api/receivables', async (req, res) => {
+    try {
+      const validatedData = insertReceivableSchema.parse(req.body);
+      
+      // Check if customer exists
+      const customer = await storage.getCustomer(validatedData.customerId);
+      if (!customer) {
+        return res.status(400).json({ message: 'Customer does not exist' });
+      }
+      
+      const receivable = await storage.createReceivable(validatedData);
+      
+      // Log activity
+      await storage.createActivity({
+        userId: 1, // Assuming admin user for now
+        action: 'create',
+        resourceType: 'receivable',
+        resourceId: receivable.id,
+        details: `a ajouté une nouvelle facture client ${receivable.number} de ${customer.name}`
+      });
+      
+      res.status(201).json(receivable);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid receivable data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to create receivable' });
+    }
+  });
+
+  app.put('/api/receivables/:id', async (req, res) => {
+    try {
+      const receivableId = parseInt(req.params.id);
+      if (isNaN(receivableId)) {
+        return res.status(400).json({ message: 'Invalid receivable ID' });
+      }
+
+      const validatedData = insertReceivableSchema.partial().parse(req.body);
+      const updatedReceivable = await storage.updateReceivable(receivableId, validatedData);
+      
+      if (!updatedReceivable) {
+        return res.status(404).json({ message: 'Receivable not found' });
+      }
+      
+      // Log activity
+      await storage.createActivity({
+        userId: 1, // Assuming admin user for now
+        action: 'update',
+        resourceType: 'receivable',
+        resourceId: receivableId,
+        details: `a modifié la facture client ${updatedReceivable.number}`
+      });
+      
+      res.json(updatedReceivable);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid receivable data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to update receivable' });
+    }
+  });
+
+  app.delete('/api/receivables/:id', async (req, res) => {
+    try {
+      const receivableId = parseInt(req.params.id);
+      if (isNaN(receivableId)) {
+        return res.status(400).json({ message: 'Invalid receivable ID' });
+      }
+
+      const receivable = await storage.getReceivable(receivableId);
+      if (!receivable) {
+        return res.status(404).json({ message: 'Receivable not found' });
+      }
+
+      const result = await storage.deleteReceivable(receivableId);
+      
+      // Log activity
+      await storage.createActivity({
+        userId: 1, // Assuming admin user for now
+        action: 'delete',
+        resourceType: 'receivable',
+        resourceId: receivableId,
+        details: `a supprimé la facture client ${receivable.number}`
+      });
+      
+      res.json({ success: result });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete receivable' });
     }
   });
 
