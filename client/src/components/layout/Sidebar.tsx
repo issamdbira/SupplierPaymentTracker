@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     },
     {
       name: "Décaissements",
-      path: "/payments",
+      path: "/suppliers/payments",
       icon: <Wallet className="w-5 h-5 mr-3 text-gray-medium" />,
     },
     {

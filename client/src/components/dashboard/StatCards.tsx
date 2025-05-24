@@ -51,7 +51,7 @@ const StatCards: React.FC = () => {
       value: stats?.upcomingPayments || 0,
       icon: <Calendar className="w-6 h-6 text-secondary" />,
       bg: "bg-secondary bg-opacity-20",
-      link: "/payments",
+      link: "/suppliers/payments",
       linkText: "Voir le calendrier",
     },
     {
