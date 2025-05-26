@@ -1,15 +1,15 @@
 import dotenv from "dotenv";
-
-
 dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import http from "http"; // Import http module
+import { setupRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -41,32 +41,33 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  // Create HTTP server instance using the Express app
+  const server = http.createServer(app); // Create server here
 
+  // Setup API routes
+  setupRoutes(app);
+
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    // Consider removing throw err; in production or adding more specific error logging
+    log(`Error: ${status} - ${message}${err.stack ? '\n' + err.stack : ''}`, 'error');
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Setup Vite or serve static files based on environment
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app, server); // Pass the created server instance
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  // Start listening on the server instance
   const port = 5000;
-   server.listen(port, "0.0.0.0", () => {
-
+  server.listen(port, "0.0.0.0", () => { // Use the created server instance
     log(`serving on port ${port}`);
-
   });
 })();
+
