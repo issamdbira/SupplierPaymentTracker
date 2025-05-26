@@ -7,365 +7,422 @@ import {
   type Installment, type InsertInstallment,
   type BankTransaction, type InsertBankTransaction,
   type Activity, type InsertActivity
-} from "@shared/schema";
+} from "../shared/schema";
 
-// Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
+  getUserById(id: number): Promise<User | null>;
+  getUserByUsername(username: string): Promise<User | null>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(userData: InsertUser): Promise<User>;
 
   // Supplier methods
-  getSupplier(id: number): Promise<Supplier | undefined>;
   getSuppliers(): Promise<Supplier[]>;
+  getSupplierById(id: number): Promise<Supplier | null>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
-  updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
+  updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | null>;
   deleteSupplier(id: number): Promise<boolean>;
 
   // Customer methods
-  getCustomer(id: number): Promise<Customer | undefined>;
   getCustomers(): Promise<Customer[]>;
+  getCustomerById(id: number): Promise<Customer | null>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
+  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | null>;
   deleteCustomer(id: number): Promise<boolean>;
 
-  // Invoice methods (Supplier payments)
-  getInvoice(id: number): Promise<Invoice | undefined>;
-  getInvoiceWithInstallments(id: number): Promise<{invoice: Invoice, installments: Installment[]} | undefined>;
+  // Invoice methods
   getInvoices(): Promise<Invoice[]>;
-  getPendingInvoices(): Promise<Invoice[]>;
+  getInvoiceById(id: number): Promise<Invoice | null>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
-  updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
+  updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | null>;
   deleteInvoice(id: number): Promise<boolean>;
+  getInvoiceWithInstallments(id: number): Promise<{ invoice: Invoice; installments: Installment[] } | null>;
 
-  // Receivable methods (Customer payments)
-  getReceivable(id: number): Promise<Receivable | undefined>;
+  // Receivable methods
   getReceivables(): Promise<Receivable[]>;
-  getPendingReceivables(): Promise<Receivable[]>;
+  getReceivableById(id: number): Promise<Receivable | null>;
   createReceivable(receivable: InsertReceivable): Promise<Receivable>;
-  updateReceivable(id: number, receivable: Partial<InsertReceivable>): Promise<Receivable | undefined>;
+  updateReceivable(id: number, receivable: Partial<InsertReceivable>): Promise<Receivable | null>;
   deleteReceivable(id: number): Promise<boolean>;
+  getReceivableWithInstallments(id: number): Promise<{ receivable: Receivable; installments: ReceivableInstallment[] } | null>;
 
-  // Installment methods (for both invoice and receivable installments)
-  getInstallment(id: number): Promise<Installment | undefined>;
-  getInstallmentsByInvoice(invoiceId: number): Promise<Installment[]>;
-  getUpcomingInstallments(): Promise<Installment[]>;
+  // Installment methods
+  getInstallments(): Promise<Installment[]>;
+  getInstallmentById(id: number): Promise<Installment | null>;
+  getInstallmentsByInvoiceId(invoiceId: number): Promise<Installment[]>;
   createInstallment(installment: InsertInstallment): Promise<Installment>;
-  createInstallments(installments: InsertInstallment[]): Promise<Installment[]>;
-  updateInstallment(id: number, installment: Partial<InsertInstallment>): Promise<Installment | undefined>;
-  deleteInstallment(id: number): Promise<boolean>;
-  deleteInstallmentsByInvoice(invoiceId: number): Promise<boolean>;
+  updateInstallment(id: number, installment: Partial<InsertInstallment>): Promise<Installment | null>;
+
+  // Receivable Installment methods
+  getReceivableInstallments(): Promise<ReceivableInstallment[]>;
+  getReceivableInstallmentById(id: number): Promise<ReceivableInstallment | null>;
+  getReceivableInstallmentsByReceivableId(receivableId: number): Promise<ReceivableInstallment[]>;
+  createReceivableInstallment(installment: InsertReceivableInstallment): Promise<ReceivableInstallment>;
+  updateReceivableInstallment(id: number, installment: Partial<InsertReceivableInstallment>): Promise<ReceivableInstallment | null>;
 
   // Bank Transaction methods
-  getBankTransaction(id: number): Promise<BankTransaction | undefined>;
-  getBankTransactions(from?: Date, to?: Date): Promise<BankTransaction[]>;
+  getBankTransactions(from?: string, to?: string, type?: string): Promise<BankTransaction[]>;
   createBankTransaction(transaction: InsertBankTransaction): Promise<BankTransaction>;
-  createBankTransactions(transactions: InsertBankTransaction[]): Promise<BankTransaction[]>;
-  updateBankTransaction(id: number, transaction: Partial<InsertBankTransaction>): Promise<BankTransaction | undefined>;
-  deleteBankTransaction(id: number): Promise<boolean>;
 
-  // Activity methods
-  getActivity(id: number): Promise<Activity | undefined>;
-  getActivities(limit?: number): Promise<Activity[]>;
-  createActivity(activity: InsertActivity): Promise<Activity>;
-  
   // Dashboard methods
   getStats(): Promise<{
-    invoiceCount: number;
-    upcomingPayments: number;
-    pendingAmount: number;
-    dueInvoices: number;
+    supplierCount: number;
     customerCount: number;
+    invoiceCount: number;
     receivableCount: number;
+    pendingInvoiceAmount: number;
     pendingReceivableAmount: number;
   }>;
-  getFinancialForecast(): Promise<{month: string, amount: number}[]>;
-  getSupplierDistribution(): Promise<{name: string, amount: number}[]>;
-  getCustomerDistribution(): Promise<{name: string, amount: number}[]>;
-  getCashFlowForecast(): Promise<{month: string, income: number, expense: number}[]>;
+  getPaymentsByMonth(): Promise<{ month: string; amount: number }[]>;
+  getSupplierDistribution(): Promise<{ supplier: string; amount: number }[]>;
+  getPendingInvoices(): Promise<Invoice[]>;
+  getRecentActivities(): Promise<Activity[]>;
+
+  // Activity methods
+  createActivity(activity: InsertActivity): Promise<Activity>;
+
+  // Financial situation methods
+  getFinancialSituation(type?: string): Promise<any[]>;
 }
 
-// In-memory implementation
+// Interface for Receivable Installment
+export interface ReceivableInstallment {
+  id: number;
+  receivableId: number;
+  installmentNumber: number;
+  amount: number;
+  percentage: number;
+  dueDate: string;
+  paymentMethod: string;
+  status: string;
+  paymentDate?: string;
+  reference?: string;
+  bankTransactionId?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Interface for inserting a new Receivable Installment
+export interface InsertReceivableInstallment {
+  receivableId: number;
+  installmentNumber: number;
+  amount: number;
+  percentage: number;
+  dueDate: string;
+  paymentMethod: string;
+  status: string;
+  paymentDate?: string;
+  reference?: string;
+  bankTransactionId?: number;
+  notes?: string;
+}
+
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private suppliers: Map<number, Supplier>;
-  private invoices: Map<number, Invoice>;
-  private installments: Map<number, Installment>;
-  private activities: Map<number, Activity>;
-  
-  private userCurrentId: number;
-  private supplierCurrentId: number;
-  private invoiceCurrentId: number;
-  private installmentCurrentId: number;
-  private activityCurrentId: number;
+  private users: Map<number, User> = new Map();
+  private userCurrentId = 1;
+
+  private suppliers: Map<number, Supplier> = new Map();
+  private supplierCurrentId = 1;
+
+  private customers: Map<number, Customer> = new Map();
+  private customerCurrentId = 1;
+
+  private invoices: Map<number, Invoice> = new Map();
+  private invoiceCurrentId = 1;
+
+  private receivables: Map<number, Receivable> = new Map();
+  private receivableCurrentId = 1;
+
+  private installments: Map<number, Installment> = new Map();
+  private installmentCurrentId = 1;
+
+  private receivableInstallments: Map<number, ReceivableInstallment> = new Map();
+  private receivableInstallmentCurrentId = 1;
+
+  private bankTransactions: Map<number, BankTransaction> = new Map();
+  private bankTransactionCurrentId = 1;
+
+  private activities: Map<number, Activity> = new Map();
+  private activityCurrentId = 1;
 
   constructor() {
-    this.users = new Map();
-    this.suppliers = new Map();
-    this.invoices = new Map();
-    this.installments = new Map();
-    this.activities = new Map();
-    
-    this.userCurrentId = 1;
-    this.supplierCurrentId = 1;
-    this.invoiceCurrentId = 1;
-    this.installmentCurrentId = 1;
-    this.activityCurrentId = 1;
-    
     // Initialize with some sample data
     this.initializeSampleData();
   }
 
-  // Initialize with sample data
   private initializeSampleData() {
-    // Create admin user
+    // Sample users
     this.createUser({
+      id: "1",
       username: "admin",
       password: "admin",
-      fullName: "Thomas Durand",
+      fullName: "Admin User",
+      email: "admin@example.com",
       role: "admin"
     });
 
-    // Create some suppliers
-    const suppliers = [
-      {
-        name: "Dupont Matériaux",
-        email: "contact@dupont-materiaux.com",
-        phone: "+33123456789",
-        address: "15 Rue des Entrepreneurs, 75015 Paris",
-        contactPerson: "Jean Dupont"
-      },
-      {
-        name: "Martin Construction",
-        email: "info@martin-construction.com",
-        phone: "+33234567890",
-        address: "22 Avenue des Bâtisseurs, 69002 Lyon",
-        contactPerson: "Sophie Martin"
-      },
-      {
-        name: "Leroy Électricité",
-        email: "contact@leroy-elec.com",
-        phone: "+33345678901",
-        address: "8 Rue des Artisans, 33000 Bordeaux",
-        contactPerson: "Pierre Leroy"
-      },
-      {
-        name: "Bernard Plomberie",
-        email: "info@bernard-plomberie.com",
-        phone: "+33456789012",
-        address: "45 Boulevard des Métiers, 59000 Lille",
-        contactPerson: "Marie Bernard"
-      },
-      {
-        name: "Dubois Matériaux",
-        email: "contact@dubois-mat.com",
-        phone: "+33567890123",
-        address: "36 Avenue de l'Industrie, 44000 Nantes",
-        contactPerson: "Luc Dubois"
-      }
-    ];
-
-    suppliers.forEach(supplier => {
-      this.createSupplier(supplier);
+    // Sample suppliers
+    this.createSupplier({
+      name: "Fournisseur A",
+      email: "contact@fournisseura.com",
+      phone: "+33123456789",
+      address: "123 Rue de Paris, 75001 Paris",
+      contactPerson: "Jean Dupont",
+      category: "Matériel informatique",
+      taxId: "FR12345678901",
+      bankInfo: "IBAN: FR76 1234 5678 9012 3456 7890 123",
+      notes: "Fournisseur principal de matériel informatique"
     });
 
-    // Create some invoices
-    const invoices = [
-      {
-        number: "FAC-2023-0542",
-        supplierId: 1,
-        amount: 45780.0,
-        issueDate: new Date(2023, 3, 15),
-        dueDate: new Date(2023, 5, 15),
-        status: "pending",
-        description: "Fourniture de matériaux de construction"
-      },
-      {
-        number: "FAC-2023-0536",
-        supplierId: 2,
-        amount: 28450.0,
-        issueDate: new Date(2023, 3, 10),
-        dueDate: new Date(2023, 4, 10),
-        status: "pending",
-        description: "Services de construction"
-      },
-      {
-        number: "FAC-2023-0528",
-        supplierId: 3,
-        amount: 12340.0,
-        issueDate: new Date(2023, 3, 5),
-        dueDate: new Date(2023, 5, 5),
-        status: "partial",
-        description: "Installation électrique"
-      },
-      {
-        number: "FAC-2023-0515",
-        supplierId: 4,
-        amount: 8920.0,
-        issueDate: new Date(2023, 2, 28),
-        dueDate: new Date(2023, 4, 28),
-        status: "pending",
-        description: "Services de plomberie"
-      },
-      {
-        number: "FAC-2023-0502",
-        supplierId: 5,
-        amount: 34560.0,
-        issueDate: new Date(2023, 2, 20),
-        dueDate: new Date(2023, 4, 20),
-        status: "partial",
-        description: "Fourniture de matériaux de construction"
-      }
-    ];
-
-    invoices.forEach(invoice => {
-      this.createInvoice(invoice);
+    this.createSupplier({
+      name: "Fournisseur B",
+      email: "contact@fournisseurb.com",
+      phone: "+33123456790",
+      address: "456 Avenue des Champs-Élysées, 75008 Paris",
+      contactPerson: "Marie Martin",
+      category: "Fournitures de bureau",
+      taxId: "FR98765432109",
+      bankInfo: "IBAN: FR76 9876 5432 1098 7654 3210 987",
+      notes: "Fournisseur de fournitures de bureau"
     });
 
-    // Create some installments for invoice 3
-    const installments = [
-      {
-        invoiceId: 3,
-        installmentNumber: 1,
-        amount: 4113.33,
-        percentage: 33.33,
-        dueDate: new Date(2023, 5, 5),
-        paymentMethod: "transfer",
-        status: "paid",
-        paymentDate: new Date(2023, 5, 5)
-      },
-      {
-        invoiceId: 3,
-        installmentNumber: 2,
-        amount: 4113.33,
-        percentage: 33.33,
-        dueDate: new Date(2023, 6, 5),
-        paymentMethod: "transfer",
-        status: "pending",
-        paymentDate: undefined
-      },
-      {
-        invoiceId: 3,
-        installmentNumber: 3,
-        amount: 4113.34,
-        percentage: 33.34,
-        dueDate: new Date(2023, 7, 5),
-        paymentMethod: "transfer",
-        status: "pending",
-        paymentDate: undefined
-      }
-    ];
-
-    installments.forEach(installment => {
-      this.createInstallment(installment);
+    // Sample customers
+    this.createCustomer({
+      name: "Client X",
+      email: "contact@clientx.com",
+      phone: "+33123456791",
+      address: "789 Boulevard Haussmann, 75009 Paris",
+      contactPerson: "Pierre Durand",
+      category: "Entreprise",
+      taxId: "FR13579246801",
+      bankInfo: "IBAN: FR76 1357 9246 8013 5792 4680 135",
+      notes: "Client régulier"
     });
 
-    // Create some installments for invoice 5
-    const installments2 = [
-      {
-        invoiceId: 5,
-        installmentNumber: 1,
-        amount: 17280.0,
-        percentage: 50.0,
-        dueDate: new Date(2023, 4, 20),
-        paymentMethod: "transfer",
-        status: "paid",
-        paymentDate: new Date(2023, 4, 20)
-      },
-      {
-        invoiceId: 5,
-        installmentNumber: 2,
-        amount: 17280.0,
-        percentage: 50.0,
-        dueDate: new Date(2023, 5, 20),
-        paymentMethod: "draft",
-        status: "pending",
-        paymentDate: undefined
-      }
-    ];
-
-    installments2.forEach(installment => {
-      this.createInstallment(installment);
+    this.createCustomer({
+      name: "Client Y",
+      email: "contact@clienty.com",
+      phone: "+33123456792",
+      address: "321 Rue de Rivoli, 75004 Paris",
+      contactPerson: "Sophie Lefebvre",
+      category: "Administration",
+      taxId: "FR24680135792",
+      bankInfo: "IBAN: FR76 2468 0135 7924 6801 3579 246",
+      notes: "Client important"
     });
 
-    // Create some activities
-    const activities = [
-      {
-        userId: 1,
-        action: "validate",
-        resourceType: "payment_plan",
-        resourceId: 3,
-        details: "a validé le plan de paiement pour la facture FAC-2023-0498"
-      },
-      {
-        userId: 1,
-        action: "create",
-        resourceType: "invoice",
-        resourceId: 1,
-        details: "a ajouté une nouvelle facture FAC-2023-0542 de Dupont Matériaux"
-      },
-      {
-        userId: 1,
-        action: "payment",
-        resourceType: "invoice",
-        resourceId: 3,
-        details: "a effectué un paiement de 12 340,00 € à Leroy Électricité"
-      },
-      {
-        userId: 1,
-        action: "alert",
-        resourceType: "system",
-        resourceId: null,
-        details: "a généré une alerte pour les factures à échéance dans moins de 7 jours"
-      }
-    ];
+    // Sample invoices (supplier payments)
+    const invoice1 = this.createInvoice({
+      number: "INV-2025-001",
+      supplierId: 1,
+      amount: 1200.50,
+      issueDate: new Date("2025-05-01").toISOString(),
+      dueDate: new Date("2025-05-31").toISOString(),
+      status: "pending",
+      description: "Achat de matériel informatique",
+      category: "Équipement",
+      reference: "BON-2025-001"
+    });
 
-    activities.forEach(activity => {
-      this.createActivity(activity);
+    const invoice2 = this.createInvoice({
+      number: "INV-2025-002",
+      supplierId: 2,
+      amount: 450.75,
+      issueDate: new Date("2025-05-05").toISOString(),
+      dueDate: new Date("2025-06-05").toISOString(),
+      status: "pending",
+      description: "Fournitures de bureau trimestrielles",
+      category: "Fournitures",
+      reference: "BON-2025-002"
+    });
+
+    // Sample receivables (customer payments)
+    const receivable1 = this.createReceivable({
+      number: "FACT-2025-001",
+      customerId: 1,
+      amount: 2500.00,
+      issueDate: new Date("2025-05-02").toISOString(),
+      dueDate: new Date("2025-06-02").toISOString(),
+      status: "pending",
+      description: "Services de consultation",
+      category: "Services",
+      reference: "DEVIS-2025-001"
+    });
+
+    const receivable2 = this.createReceivable({
+      number: "FACT-2025-002",
+      customerId: 2,
+      amount: 1800.25,
+      issueDate: new Date("2025-05-10").toISOString(),
+      dueDate: new Date("2025-06-10").toISOString(),
+      status: "pending",
+      description: "Développement de logiciel",
+      category: "Développement",
+      reference: "DEVIS-2025-002"
+    });
+
+    // Sample installments for invoices
+    this.createInstallment({
+      invoiceId: invoice1.id,
+      installmentNumber: 1,
+      amount: 600.25,
+      percentage: 50,
+      dueDate: new Date("2025-05-15").toISOString(),
+      paymentMethod: "transfer",
+      status: "pending"
+    });
+
+    this.createInstallment({
+      invoiceId: invoice1.id,
+      installmentNumber: 2,
+      amount: 600.25,
+      percentage: 50,
+      dueDate: new Date("2025-05-31").toISOString(),
+      paymentMethod: "transfer",
+      status: "pending"
+    });
+
+    this.createInstallment({
+      invoiceId: invoice2.id,
+      installmentNumber: 1,
+      amount: 450.75,
+      percentage: 100,
+      dueDate: new Date("2025-06-05").toISOString(),
+      paymentMethod: "check",
+      status: "pending"
+    });
+
+    // Sample installments for receivables
+    this.createReceivableInstallment({
+      receivableId: receivable1.id,
+      installmentNumber: 1,
+      amount: 1250.00,
+      percentage: 50,
+      dueDate: new Date("2025-05-17").toISOString(),
+      paymentMethod: "transfer",
+      status: "pending"
+    });
+
+    this.createReceivableInstallment({
+      receivableId: receivable1.id,
+      installmentNumber: 2,
+      amount: 1250.00,
+      percentage: 50,
+      dueDate: new Date("2025-06-02").toISOString(),
+      paymentMethod: "transfer",
+      status: "pending"
+    });
+
+    this.createReceivableInstallment({
+      receivableId: receivable2.id,
+      installmentNumber: 1,
+      amount: 900.13,
+      percentage: 50,
+      dueDate: new Date("2025-05-25").toISOString(),
+      paymentMethod: "transfer",
+      status: "pending"
+    });
+
+    this.createReceivableInstallment({
+      receivableId: receivable2.id,
+      installmentNumber: 2,
+      amount: 900.12,
+      percentage: 50,
+      dueDate: new Date("2025-06-10").toISOString(),
+      paymentMethod: "transfer",
+      status: "pending"
+    });
+
+    // Sample bank transactions
+    this.createBankTransaction({
+      accountId: "main",
+      transactionDate: new Date("2025-05-01").toISOString(),
+      amount: -450.75,
+      description: "Paiement Fournisseur B",
+      reference: "VIR-2025-001",
+      type: "debit",
+      category: "Fournitures",
+      isMatched: false
+    });
+
+    this.createBankTransaction({
+      accountId: "main",
+      transactionDate: new Date("2025-05-03").toISOString(),
+      amount: 1250.00,
+      description: "Paiement Client X",
+      reference: "VIR-2025-002",
+      type: "credit",
+      category: "Services",
+      isMatched: false
     });
   }
 
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getUserById(id: number): Promise<User | null> {
+    return this.users.get(id) || null;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByUsername(username: string): Promise<User | null> {
+    const users = Array.from(this.users.values());
+    return users.find(user => user.username === username) || null;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const newUser: User = { ...user, id: user.id || id.toString() };
+    this.users.set(id, newUser);
+    return newUser;
+  }
+
+  async upsertUser(userData: InsertUser): Promise<User> {
+    const existingUser = await this.getUserByUsername(userData.username);
+    if (existingUser) {
+      const updatedUser: User = { ...existingUser, ...userData };
+      this.users.set(parseInt(existingUser.id), updatedUser);
+      return updatedUser;
+    } else {
+      return this.createUser(userData);
+    }
   }
 
   // Supplier methods
-  async getSupplier(id: number): Promise<Supplier | undefined> {
-    return this.suppliers.get(id);
-  }
-
   async getSuppliers(): Promise<Supplier[]> {
     return Array.from(this.suppliers.values());
   }
 
+  async getSupplierById(id: number): Promise<Supplier | null> {
+    return this.suppliers.get(id) || null;
+  }
+
   async createSupplier(supplier: InsertSupplier): Promise<Supplier> {
     const id = this.supplierCurrentId++;
-    const newSupplier: Supplier = { ...supplier, id };
+    const now = new Date().toISOString();
+    const newSupplier: Supplier = {
+      ...supplier,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
     this.suppliers.set(id, newSupplier);
     return newSupplier;
   }
 
-  async updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined> {
+  async updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier | null> {
     const existingSupplier = this.suppliers.get(id);
-    if (!existingSupplier) return undefined;
-    
-    const updatedSupplier = { ...existingSupplier, ...supplier };
+    if (!existingSupplier) {
+      return null;
+    }
+    const updatedSupplier: Supplier = {
+      ...existingSupplier,
+      ...supplier,
+      updatedAt: new Date().toISOString()
+    };
     this.suppliers.set(id, updatedSupplier);
     return updatedSupplier;
   }
@@ -374,224 +431,380 @@ export class MemStorage implements IStorage {
     return this.suppliers.delete(id);
   }
 
+  // Customer methods
+  async getCustomers(): Promise<Customer[]> {
+    return Array.from(this.customers.values());
+  }
+
+  async getCustomerById(id: number): Promise<Customer | null> {
+    return this.customers.get(id) || null;
+  }
+
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const id = this.customerCurrentId++;
+    const now = new Date().toISOString();
+    const newCustomer: Customer = {
+      ...customer,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.customers.set(id, newCustomer);
+    return newCustomer;
+  }
+
+  async updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | null> {
+    const existingCustomer = this.customers.get(id);
+    if (!existingCustomer) {
+      return null;
+    }
+    const updatedCustomer: Customer = {
+      ...existingCustomer,
+      ...customer,
+      updatedAt: new Date().toISOString()
+    };
+    this.customers.set(id, updatedCustomer);
+    return updatedCustomer;
+  }
+
+  async deleteCustomer(id: number): Promise<boolean> {
+    return this.customers.delete(id);
+  }
+
   // Invoice methods
-  async getInvoice(id: number): Promise<Invoice | undefined> {
-    return this.invoices.get(id);
-  }
-
-  async getInvoiceWithInstallments(id: number): Promise<{invoice: Invoice, installments: Installment[]} | undefined> {
-    const invoice = await this.getInvoice(id);
-    if (!invoice) return undefined;
-    
-    const installments = await this.getInstallmentsByInvoice(id);
-    return { invoice, installments };
-  }
-
   async getInvoices(): Promise<Invoice[]> {
     return Array.from(this.invoices.values());
   }
 
-  async getPendingInvoices(): Promise<Invoice[]> {
-    return Array.from(this.invoices.values()).filter(
-      (invoice) => invoice.status === "pending" || invoice.status === "partial"
-    );
+  async getInvoiceById(id: number): Promise<Invoice | null> {
+    return this.invoices.get(id) || null;
   }
 
   async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
     const id = this.invoiceCurrentId++;
-    const newInvoice: Invoice = { ...invoice, id };
+    const now = new Date().toISOString();
+    const newInvoice: Invoice = {
+      ...invoice,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
     this.invoices.set(id, newInvoice);
     return newInvoice;
   }
 
-  async updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+  async updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | null> {
     const existingInvoice = this.invoices.get(id);
-    if (!existingInvoice) return undefined;
-    
-    const updatedInvoice = { ...existingInvoice, ...invoice };
+    if (!existingInvoice) {
+      return null;
+    }
+    const updatedInvoice: Invoice = {
+      ...existingInvoice,
+      ...invoice,
+      updatedAt: new Date().toISOString()
+    };
     this.invoices.set(id, updatedInvoice);
     return updatedInvoice;
   }
 
   async deleteInvoice(id: number): Promise<boolean> {
-    // Delete all installments for this invoice
-    await this.deleteInstallmentsByInvoice(id);
     return this.invoices.delete(id);
   }
 
+  async getInvoiceWithInstallments(id: number): Promise<{ invoice: Invoice; installments: Installment[] } | null> {
+    const invoice = await this.getInvoiceById(id);
+    if (!invoice) {
+      return null;
+    }
+    const installments = await this.getInstallmentsByInvoiceId(id);
+    return { invoice, installments };
+  }
+
+  // Receivable methods
+  async getReceivables(): Promise<Receivable[]> {
+    return Array.from(this.receivables.values());
+  }
+
+  async getReceivableById(id: number): Promise<Receivable | null> {
+    return this.receivables.get(id) || null;
+  }
+
+  async createReceivable(receivable: InsertReceivable): Promise<Receivable> {
+    const id = this.receivableCurrentId++;
+    const now = new Date().toISOString();
+    const newReceivable: Receivable = {
+      ...receivable,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.receivables.set(id, newReceivable);
+    return newReceivable;
+  }
+
+  async updateReceivable(id: number, receivable: Partial<InsertReceivable>): Promise<Receivable | null> {
+    const existingReceivable = this.receivables.get(id);
+    if (!existingReceivable) {
+      return null;
+    }
+    const updatedReceivable: Receivable = {
+      ...existingReceivable,
+      ...receivable,
+      updatedAt: new Date().toISOString()
+    };
+    this.receivables.set(id, updatedReceivable);
+    return updatedReceivable;
+  }
+
+  async deleteReceivable(id: number): Promise<boolean> {
+    return this.receivables.delete(id);
+  }
+
+  async getReceivableWithInstallments(id: number): Promise<{ receivable: Receivable; installments: ReceivableInstallment[] } | null> {
+    const receivable = await this.getReceivableById(id);
+    if (!receivable) {
+      return null;
+    }
+    const installments = await this.getReceivableInstallmentsByReceivableId(id);
+    return { receivable, installments };
+  }
+
   // Installment methods
-  async getInstallment(id: number): Promise<Installment | undefined> {
-    return this.installments.get(id);
+  async getInstallments(): Promise<Installment[]> {
+    return Array.from(this.installments.values());
   }
 
-  async getInstallmentsByInvoice(invoiceId: number): Promise<Installment[]> {
-    return Array.from(this.installments.values()).filter(
-      (installment) => installment.invoiceId === invoiceId
-    );
+  async getInstallmentById(id: number): Promise<Installment | null> {
+    return this.installments.get(id) || null;
   }
 
-  async getUpcomingInstallments(): Promise<Installment[]> {
+  async getInstallmentsByInvoiceId(invoiceId: number): Promise<Installment[]> {
     return Array.from(this.installments.values()).filter(
-      (installment) => installment.status === "pending"
+      installment => installment.invoiceId === invoiceId
     );
   }
 
   async createInstallment(installment: InsertInstallment): Promise<Installment> {
     const id = this.installmentCurrentId++;
-    const newInstallment: Installment = { ...installment, id };
+    const now = new Date().toISOString();
+    const newInstallment: Installment = {
+      ...installment,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
     this.installments.set(id, newInstallment);
     return newInstallment;
   }
 
-  async createInstallments(installments: InsertInstallment[]): Promise<Installment[]> {
-    const createdInstallments: Installment[] = [];
-    
-    for (const installment of installments) {
-      const createdInstallment = await this.createInstallment(installment);
-      createdInstallments.push(createdInstallment);
-    }
-    
-    return createdInstallments;
-  }
-
-  async updateInstallment(id: number, installment: Partial<InsertInstallment>): Promise<Installment | undefined> {
+  async updateInstallment(id: number, installment: Partial<InsertInstallment>): Promise<Installment | null> {
     const existingInstallment = this.installments.get(id);
-    if (!existingInstallment) return undefined;
-    
-    const updatedInstallment = { ...existingInstallment, ...installment };
+    if (!existingInstallment) {
+      return null;
+    }
+    const updatedInstallment: Installment = {
+      ...existingInstallment,
+      ...installment,
+      updatedAt: new Date().toISOString()
+    };
     this.installments.set(id, updatedInstallment);
     return updatedInstallment;
   }
 
-  async deleteInstallment(id: number): Promise<boolean> {
-    return this.installments.delete(id);
+  // Receivable Installment methods
+  async getReceivableInstallments(): Promise<ReceivableInstallment[]> {
+    return Array.from(this.receivableInstallments.values());
   }
 
-  async deleteInstallmentsByInvoice(invoiceId: number): Promise<boolean> {
-    const installments = await this.getInstallmentsByInvoice(invoiceId);
+  async getReceivableInstallmentById(id: number): Promise<ReceivableInstallment | null> {
+    return this.receivableInstallments.get(id) || null;
+  }
+
+  async getReceivableInstallmentsByReceivableId(receivableId: number): Promise<ReceivableInstallment[]> {
+    return Array.from(this.receivableInstallments.values()).filter(
+      installment => installment.receivableId === receivableId
+    );
+  }
+
+  async createReceivableInstallment(installment: InsertReceivableInstallment): Promise<ReceivableInstallment> {
+    const id = this.receivableInstallmentCurrentId++;
+    const now = new Date().toISOString();
+    const newInstallment: ReceivableInstallment = {
+      ...installment,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.receivableInstallments.set(id, newInstallment);
+    return newInstallment;
+  }
+
+  async updateReceivableInstallment(id: number, installment: Partial<InsertReceivableInstallment>): Promise<ReceivableInstallment | null> {
+    const existingInstallment = this.receivableInstallments.get(id);
+    if (!existingInstallment) {
+      return null;
+    }
+    const updatedInstallment: ReceivableInstallment = {
+      ...existingInstallment,
+      ...installment,
+      updatedAt: new Date().toISOString()
+    };
+    this.receivableInstallments.set(id, updatedInstallment);
+    return updatedInstallment;
+  }
+
+  // Bank Transaction methods
+  async getBankTransactions(from?: string, to?: string, type?: string): Promise<BankTransaction[]> {
+    let transactions = Array.from(this.bankTransactions.values());
     
-    for (const installment of installments) {
-      await this.deleteInstallment(installment.id);
+    if (from) {
+      const fromDate = new Date(from);
+      transactions = transactions.filter(t => new Date(t.transactionDate) >= fromDate);
     }
     
-    return true;
+    if (to) {
+      const toDate = new Date(to);
+      transactions = transactions.filter(t => new Date(t.transactionDate) <= toDate);
+    }
+    
+    if (type) {
+      transactions = transactions.filter(t => t.type === type);
+    }
+    
+    return transactions;
+  }
+
+  async createBankTransaction(transaction: InsertBankTransaction): Promise<BankTransaction> {
+    const id = this.bankTransactionCurrentId++;
+    const now = new Date().toISOString();
+    const newTransaction: BankTransaction = {
+      ...transaction,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.bankTransactions.set(id, newTransaction);
+    return newTransaction;
+  }
+
+  // Dashboard methods
+  async getStats(): Promise<{
+    supplierCount: number;
+    customerCount: number;
+    invoiceCount: number;
+    receivableCount: number;
+    pendingInvoiceAmount: number;
+    pendingReceivableAmount: number;
+  }> {
+    const suppliers = await this.getSuppliers();
+    const customers = await this.getCustomers();
+    const invoices = await this.getInvoices();
+    const receivables = await this.getReceivables();
+    
+    const pendingInvoices = invoices.filter(invoice => invoice.status === "pending" || invoice.status === "partial");
+    const pendingReceivables = receivables.filter(receivable => receivable.status === "pending" || receivable.status === "partial");
+    
+    const pendingInvoiceAmount = pendingInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
+    const pendingReceivableAmount = pendingReceivables.reduce((sum, receivable) => sum + receivable.amount, 0);
+    
+    return {
+      supplierCount: suppliers.length,
+      customerCount: customers.length,
+      invoiceCount: invoices.length,
+      receivableCount: receivables.length,
+      pendingInvoiceAmount,
+      pendingReceivableAmount
+    };
+  }
+
+  async getPaymentsByMonth(): Promise<{ month: string; amount: number }[]> {
+    const installments = await this.getInstallments();
+    const receivableInstallments = await this.getReceivableInstallments();
+    
+    const paymentsByMonth: Map<string, number> = new Map();
+    
+    // Process supplier payments (negative amounts)
+    installments.forEach(installment => {
+      if (installment.paymentDate) {
+        const date = new Date(installment.paymentDate);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const currentAmount = paymentsByMonth.get(monthKey) || 0;
+        paymentsByMonth.set(monthKey, currentAmount - installment.amount);
+      }
+    });
+    
+    // Process customer payments (positive amounts)
+    receivableInstallments.forEach(installment => {
+      if (installment.paymentDate) {
+        const date = new Date(installment.paymentDate);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const currentAmount = paymentsByMonth.get(monthKey) || 0;
+        paymentsByMonth.set(monthKey, currentAmount + installment.amount);
+      }
+    });
+    
+    // Convert to array and sort by month
+    const result: { month: string; amount: number }[] = [];
+    paymentsByMonth.forEach((amount, month) => {
+      result.push({ month, amount });
+    });
+    
+    return result.sort((a, b) => a.month.localeCompare(b.month));
+  }
+
+  async getSupplierDistribution(): Promise<{ supplier: string; amount: number }[]> {
+    const invoices = await this.getInvoices();
+    const suppliers = await this.getSuppliers();
+    
+    const supplierAmounts: Map<number, number> = new Map();
+    
+    invoices.forEach(invoice => {
+      const currentAmount = supplierAmounts.get(invoice.supplierId) || 0;
+      supplierAmounts.set(invoice.supplierId, currentAmount + invoice.amount);
+    });
+    
+    const result: { supplier: string; amount: number }[] = [];
+    supplierAmounts.forEach((amount, supplierId) => {
+      const supplier = suppliers.find(s => s.id === supplierId);
+      if (supplier) {
+        result.push({ supplier: supplier.name, amount });
+      }
+    });
+    
+    return result.sort((a, b) => b.amount - a.amount);
+  }
+
+  async getPendingInvoices(): Promise<Invoice[]> {
+    const invoices = await this.getInvoices();
+    return invoices.filter(invoice => invoice.status === "pending" || invoice.status === "partial");
+  }
+
+  async getRecentActivities(): Promise<Activity[]> {
+    const activities = Array.from(this.activities.values());
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
   }
 
   // Activity methods
-  async getActivity(id: number): Promise<Activity | undefined> {
-    return this.activities.get(id);
-  }
-
-  async getActivities(limit?: number): Promise<Activity[]> {
-    const activities = Array.from(this.activities.values())
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
-    return limit ? activities.slice(0, limit) : activities;
-  }
-
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const id = this.activityCurrentId++;
-    const newActivity: Activity = { 
-      ...activity, 
-      id, 
-      timestamp: activity.timestamp || new Date() 
+    const now = new Date().toISOString();
+    const newActivity: Activity = {
+      ...activity,
+      id,
+      timestamp: now
     };
     this.activities.set(id, newActivity);
     return newActivity;
   }
 
-  // Dashboard methods
-  async getStats(): Promise<{ invoiceCount: number; upcomingPayments: number; pendingAmount: number; dueInvoices: number; }> {
-    const invoices = await this.getInvoices();
-    const pendingInvoices = await this.getPendingInvoices();
-    const upcomingInstallments = await this.getUpcomingInstallments();
+  // Financial situation methods
+  async getFinancialSituation(type?: string): Promise<any[]> {
+    const bankTransactions = await this.getBankTransactions();
     
-    // Calculate pending amount
-    const pendingAmount = pendingInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
-    
-    // Calculate due invoices (due date within 7 days)
-    const now = new Date();
-    const oneWeekFromNow = new Date();
-    oneWeekFromNow.setDate(now.getDate() + 7);
-    
-    const dueInvoices = pendingInvoices.filter(
-      (invoice) => invoice.dueDate <= oneWeekFromNow
-    ).length;
-    
-    return {
-      invoiceCount: invoices.length,
-      upcomingPayments: upcomingInstallments.length,
-      pendingAmount,
-      dueInvoices
-    };
-  }
-
-  async getFinancialForecast(): Promise<{ month: string; amount: number; }[]> {
-    const upcomingInstallments = await this.getUpcomingInstallments();
-    const now = new Date();
-    const result: { [key: string]: number } = {};
-    
-    // Get next 6 months
-    for (let i = 0; i < 6; i++) {
-      const date = new Date(now);
-      date.setMonth(now.getMonth() + i);
-      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
-      result[monthKey] = 0;
+    if (type) {
+      return bankTransactions.filter(transaction => transaction.type === type);
     }
     
-    // Sum amounts by month
-    for (const installment of upcomingInstallments) {
-      const dueDate = new Date(installment.dueDate);
-      const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`;
-      
-      if (result[monthKey] !== undefined) {
-        result[monthKey] += installment.amount;
-      }
-    }
-    
-    // Convert to array and format for chart
-    return Object.entries(result).map(([key, amount]) => {
-      const [year, month] = key.split('-').map(Number);
-      const date = new Date(year, month - 1);
-      return {
-        month: date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
-        amount
-      };
-    });
-  }
-
-  async getSupplierDistribution(): Promise<{ name: string; amount: number; }[]> {
-    const invoices = await this.getPendingInvoices();
-    const suppliers = await this.getSuppliers();
-    const result: { [key: number]: number } = {};
-    
-    // Sum amounts by supplier
-    for (const invoice of invoices) {
-      if (!result[invoice.supplierId]) {
-        result[invoice.supplierId] = 0;
-      }
-      result[invoice.supplierId] += invoice.amount;
-    }
-    
-    // Convert to array and format for chart
-    const supplierData = Object.entries(result)
-      .map(([supplierId, amount]) => {
-        const supplier = suppliers.find(s => s.id === Number(supplierId));
-        return {
-          name: supplier ? supplier.name : 'Unknown',
-          amount
-        };
-      })
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5); // Top 5 suppliers
-    
-    return supplierData;
+    return bankTransactions;
   }
 }
-
-// Import DatabaseStorage implementation
-import { DatabaseStorage } from './DatabaseStorage';
-
-// Create storage instance
-// Use DatabaseStorage for persistent storage, or MemStorage for in-memory storage
-export const storage = new DatabaseStorage();

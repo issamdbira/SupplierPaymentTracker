@@ -1,105 +1,120 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Calendar, DollarSign, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const StatCards: React.FC = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/dashboard/stats"],
-  });
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  description?: string;
+  icon?: React.ReactNode;
+  loading?: boolean;
+}
 
-  if (isLoading) {
+const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  description,
+  icon,
+  loading = false,
+}) => {
+  if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, index) => (
-          <Card key={index} className="overflow-hidden">
-            <CardContent className="p-5">
-              <div className="animate-pulse flex items-center">
-                <div className="flex-shrink-0 w-12 h-12 rounded-md bg-gray-200"></div>
-                <div className="flex-1 ml-5 w-0">
-                  <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
-                  <div className="h-6 w-1/2 bg-gray-200 rounded mt-2"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          {icon}
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-7 w-1/2 mb-1" />
+          {description && <Skeleton className="h-4 w-3/4" />}
+        </CardContent>
+      </Card>
     );
   }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+interface DashboardStats {
+  invoiceCount: number;
+  upcomingPayments: number;
+  pendingAmount: number;
+  dueInvoices: number;
+  customerCount: number;
+  receivableCount: number;
+  pendingReceivableAmount: number;
+}
+
+const StatCards: React.FC = () => {
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard/stats"],
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
-      maximumFractionDigits: 0,
     }).format(amount);
   };
 
-  const statCards = [
-    {
-      title: "Total Factures",
-      value: stats?.invoiceCount || 0,
-      icon: <FileText className="w-6 h-6 text-primary-dark" />,
-      bg: "bg-primary-light",
-      link: "/invoices",
-      linkText: "Voir toutes",
-    },
-    {
-      title: "Paiements à venir",
-      value: stats?.upcomingPayments || 0,
-      icon: <Calendar className="w-6 h-6 text-secondary" />,
-      bg: "bg-secondary bg-opacity-20",
-      link: "/suppliers/payments",
-      linkText: "Voir le calendrier",
-    },
-    {
-      title: "Montant en attente",
-      value: formatCurrency(stats?.pendingAmount || 0),
-      icon: <DollarSign className="w-6 h-6 text-warning" />,
-      bg: "bg-warning bg-opacity-20",
-      link: "/financial-situation",
-      linkText: "Voir détails",
-    },
-    {
-      title: "Factures à échéance",
-      value: stats?.dueInvoices || 0,
-      icon: <AlertTriangle className="w-6 h-6 text-danger" />,
-      bg: "bg-danger bg-opacity-20",
-      link: "/invoices",
-      linkText: "Action urgente",
-    },
-  ];
-
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {statCards.map((card, index) => (
-        <Card key={index} className="overflow-hidden">
-          <CardContent className="p-5">
-            <div className="flex items-center">
-              <div className={`flex-shrink-0 p-3 rounded-md ${card.bg}`}>
-                {card.icon}
-              </div>
-              <div className="flex-1 ml-5 w-0">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-medium truncate">{card.title}</dt>
-                  <dd>
-                    <div className="text-lg font-semibold text-gray-dark">{card.value}</div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </CardContent>
-          <div className="px-5 py-3 bg-gray-50">
-            <div className="text-sm">
-              <Link href={card.link} className="font-medium text-primary hover:text-primary-dark">
-                {card.linkText}
-              </Link>
-            </div>
-          </div>
-        </Card>
-      ))}
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard
+        title="Factures"
+        value={stats?.invoiceCount || 0}
+        description="Nombre total de factures"
+        loading={isLoading}
+      />
+      <StatsCard
+        title="Paiements à venir"
+        value={stats?.upcomingPayments || 0}
+        description="Échéances en attente"
+        loading={isLoading}
+      />
+      <StatsCard
+        title="Montant en attente"
+        value={formatCurrency(stats?.pendingAmount || 0)}
+        description="Total des factures non payées"
+        loading={isLoading}
+      />
+      <StatsCard
+        title="Factures à échéance"
+        value={stats?.dueInvoices || 0}
+        description="Échéances dans les 7 jours"
+        loading={isLoading}
+      />
+      <StatsCard
+        title="Clients"
+        value={stats?.customerCount || 0}
+        description="Nombre total de clients"
+        loading={isLoading}
+      />
+      <StatsCard
+        title="Factures clients"
+        value={stats?.receivableCount || 0}
+        description="Nombre total de factures clients"
+        loading={isLoading}
+      />
+      <StatsCard
+        title="Montant à recevoir"
+        value={formatCurrency(stats?.pendingReceivableAmount || 0)}
+        description="Total des factures clients non payées"
+        loading={isLoading}
+      />
     </div>
   );
 };

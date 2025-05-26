@@ -1,175 +1,466 @@
-import { useState } from "react";
-import { Plus, Search, Filter, FileText, Calendar, Euro } from "lucide-react";
+import React, { useState } from "react";
+import { Helmet } from "react-helmet";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Search, Plus, FileText, Building, ArrowDown, ArrowUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-function InvoicesPage() {
+interface Invoice {
+  id: number;
+  number: string;
+  amount: number;
+  issueDate: string;
+  dueDate: string;
+  status: string;
+  supplierId: number;
+  description?: string;
+}
+
+interface Receivable {
+  id: number;
+  number: string;
+  amount: number;
+  issueDate: string;
+  dueDate: string;
+  status: string;
+  customerId: number;
+  description?: string;
+}
+
+interface Supplier {
+  id: number;
+  name: string;
+}
+
+interface Customer {
+  id: number;
+  name: string;
+}
+
+const InvoicesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  // Données d'exemple pour démontrer le style Ernst & Young
-  const sampleInvoices = [
-    { id: 1, number: "F-2024-001", supplier: "Achref", amount: 1500.00, status: "pending", issueDate: "2024-01-15", dueDate: "2024-02-15" },
-    { id: 2, number: "F-2024-002", supplier: "Fournisseur Tech", amount: 2800.00, status: "paid", issueDate: "2024-01-20", dueDate: "2024-02-20" },
-    { id: 3, number: "F-2024-003", supplier: "Services Pro", amount: 950.00, status: "overdue", issueDate: "2024-01-10", dueDate: "2024-02-10" },
-  ];
+  const { data: invoices = [], isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
+    queryKey: ["/api/invoices"],
+  });
+
+  const { data: receivables = [], isLoading: isLoadingReceivables } = useQuery<Receivable[]>({
+    queryKey: ["/api/receivables"],
+  });
+
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers"],
+  });
+
+  const { data: customers = [], isLoading: isLoadingCustomers } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
+  });
+
+  const isLoading = isLoadingInvoices || isLoadingReceivables || isLoadingSuppliers || isLoadingCustomers;
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { label: "En attente", variant: "default" as const },
-      processing: { label: "En cours", variant: "secondary" as const },
-      paid: { label: "Payée", variant: "secondary" as const },
-      overdue: { label: "En retard", variant: "destructive" as const },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+    switch (status) {
+      case "paid":
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            Payé
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+            En attente
+          </Badge>
+        );
+      case "overdue":
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+            En retard
+          </Badge>
+        );
+      case "partial":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+            Partiel
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+            {status}
+          </Badge>
+        );
+    }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR');
+    try {
+      return format(new Date(dateString), "dd MMM yyyy", { locale: fr });
+    } catch (error) {
+      return dateString;
+    }
   };
 
-  const totalAmount = sampleInvoices.reduce((sum, inv) => sum + inv.amount, 0);
-  const pendingCount = sampleInvoices.filter(inv => inv.status === 'pending').length;
-  const overdueCount = sampleInvoices.filter(inv => inv.status === 'overdue').length;
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount);
+  };
 
-  return (
-    <div className="page-custom p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="header-custom rounded-lg p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-700">Gestion des Factures</h1>
-              <p className="text-gray-600 mt-2">
-                Gérez vos factures fournisseurs et planifiez vos paiements
-              </p>
-            </div>
-            <Button className="btn-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle Facture
-            </Button>
+  const getSupplierName = (supplierId: number) => {
+    const supplier = Array.isArray(suppliers) ? suppliers.find((s: Supplier) => s.id === supplierId) : null;
+    return supplier?.name || "Inconnu";
+  };
+
+  const getCustomerName = (customerId: number) => {
+    const customer = Array.isArray(customers) ? customers.find((c: Customer) => c.id === customerId) : null;
+    return customer?.name || "Inconnu";
+  };
+
+  const filteredInvoices = () => {
+    if (!Array.isArray(invoices)) return [];
+    
+    return invoices.filter((invoice: Invoice) => {
+      // Status filter
+      if (statusFilter && invoice.status !== statusFilter) {
+        return false;
+      }
+
+      // Search term
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const supplierName = getSupplierName(invoice.supplierId).toLowerCase();
+        
+        return (
+          invoice.number.toLowerCase().includes(searchLower) ||
+          supplierName.includes(searchLower) ||
+          (invoice.description && invoice.description.toLowerCase().includes(searchLower))
+        );
+      }
+
+      return true;
+    });
+  };
+
+  const filteredReceivables = () => {
+    if (!Array.isArray(receivables)) return [];
+    
+    return receivables.filter((receivable: Receivable) => {
+      // Status filter
+      if (statusFilter && receivable.status !== statusFilter) {
+        return false;
+      }
+
+      // Search term
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const customerName = getCustomerName(receivable.customerId).toLowerCase();
+        
+        return (
+          receivable.number.toLowerCase().includes(searchLower) ||
+          customerName.includes(searchLower) ||
+          (receivable.description && receivable.description.toLowerCase().includes(searchLower))
+        );
+      }
+
+      return true;
+    });
+  };
+
+  const getTotalInvoiceAmount = () => {
+    if (!Array.isArray(invoices)) return 0;
+    return invoices.reduce((sum, invoice: Invoice) => sum + invoice.amount, 0);
+  };
+
+  const getTotalReceivableAmount = () => {
+    if (!Array.isArray(receivables)) return 0;
+    return receivables.reduce((sum, receivable: Receivable) => sum + receivable.amount, 0);
+  };
+
+  const getPendingInvoiceAmount = () => {
+    if (!Array.isArray(invoices)) return 0;
+    return invoices
+      .filter((invoice: Invoice) => invoice.status === "pending" || invoice.status === "partial")
+      .reduce((sum, invoice: Invoice) => sum + invoice.amount, 0);
+  };
+
+  const getPendingReceivableAmount = () => {
+    if (!Array.isArray(receivables)) return 0;
+    return receivables
+      .filter((receivable: Receivable) => receivable.status === "pending" || receivable.status === "partial")
+      .reduce((sum, receivable: Receivable) => sum + receivable.amount, 0);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-6">
+        <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+          <h1 className="text-2xl font-semibold text-gray-dark">Factures</h1>
+          <div className="mt-6 animate-pulse">
+            <div className="h-12 bg-gray-200 rounded w-full mb-4"></div>
+            <div className="h-96 bg-gray-200 rounded w-full"></div>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Cartes de statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="card-custom">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total des Factures</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{sampleInvoices.length}</div>
-              <p className="text-xs text-muted-foreground">factures enregistrées</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-custom">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">En Attente</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingCount}</div>
-              <p className="text-xs text-muted-foreground">factures à traiter</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-custom">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Montant Total</CardTitle>
-              <Euro className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
-              <p className="text-xs text-muted-foreground">montant total</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-custom">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">En Retard</CardTitle>
-              <Calendar className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{overdueCount}</div>
-              <p className="text-xs text-muted-foreground">factures en retard</p>
-            </CardContent>
-          </Card>
+  return (
+    <>
+      <Helmet>
+        <title>Factures | FinancePro</title>
+        <meta name="description" content="Gérez vos factures d'achat et de vente, suivez les paiements et organisez votre comptabilité." />
+      </Helmet>
+      
+      <div className="py-6">
+        <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+          <h1 className="text-2xl font-semibold text-gray-dark">Factures</h1>
         </div>
 
-        {/* Recherche */}
-        <Card className="card-custom">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Rechercher par numéro de facture ou fournisseur..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button variant="outline" className="btn-primary">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtres
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Liste des factures */}
-        <Card className="card-custom">
-          <CardHeader>
-            <CardTitle>Liste des Factures</CardTitle>
-            <CardDescription>
-              {sampleInvoices.length} facture(s) trouvée(s)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {sampleInvoices.map((invoice) => (
-                <div key={invoice.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4">
-                        <h3 className="font-medium text-gray-700">{invoice.number}</h3>
-                        <p className="text-gray-600">{invoice.supplier}</p>
-                        <p className="font-semibold text-lg text-gray-700">{formatCurrency(invoice.amount)}</p>
-                        {getStatusBadge(invoice.status)}
-                      </div>
-                      <div className="mt-2 text-sm text-gray-500">
-                        Émission: {formatDate(invoice.issueDate)} • Échéance: {formatDate(invoice.dueDate)}
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button size="sm" className="btn-primary">
-                        Planifier
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        Modifier
-                      </Button>
-                    </div>
-                  </div>
+        <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Total Achats</CardDescription>
+                <CardTitle className="text-2xl text-red-600">{formatCurrency(getTotalInvoiceAmount())}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <ArrowDown className="mr-1 h-4 w-4 text-red-500" />
+                  Montant total des factures fournisseurs
                 </div>
-              ))}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Achats en attente</CardDescription>
+                <CardTitle className="text-2xl text-yellow-600">{formatCurrency(getPendingInvoiceAmount())}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <ArrowDown className="mr-1 h-4 w-4 text-yellow-500" />
+                  Montant des factures fournisseurs à payer
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Total Ventes</CardDescription>
+                <CardTitle className="text-2xl text-green-600">{formatCurrency(getTotalReceivableAmount())}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <ArrowUp className="mr-1 h-4 w-4 text-green-500" />
+                  Montant total des factures clients
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Ventes en attente</CardDescription>
+                <CardTitle className="text-2xl text-blue-600">{formatCurrency(getPendingReceivableAmount())}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <ArrowUp className="mr-1 h-4 w-4 text-blue-500" />
+                  Montant des factures clients à encaisser
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="mt-6 flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-medium h-4 w-4" />
+              <Input
+                placeholder="Rechercher par numéro, fournisseur ou client..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
+            
+            <select
+              value={statusFilter || ""}
+              onChange={(e) => setStatusFilter(e.target.value || null)}
+              className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="paid">Payé</option>
+              <option value="partial">Partiel</option>
+              <option value="overdue">En retard</option>
+            </select>
+          </div>
+
+          {/* Invoices Tables */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Supplier Invoices (Left) */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <CardTitle>Factures d'achat</CardTitle>
+                  <Button
+                    className="bg-primary hover:bg-primary-dark"
+                    size="sm"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nouvelle facture
+                  </Button>
+                </div>
+                <CardDescription>
+                  Factures fournisseurs à payer
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Numéro</TableHead>
+                        <TableHead>Fournisseur</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInvoices().length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8">
+                            <ArrowDown className="mx-auto h-12 w-12 text-gray-300" />
+                            <p className="mt-2 text-gray-medium">Aucune facture trouvée</p>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredInvoices().map((invoice: Invoice) => (
+                          <TableRow key={invoice.id}>
+                            <TableCell className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-gray-medium" />
+                              {invoice.number}
+                            </TableCell>
+                            <TableCell className="flex items-center gap-2">
+                              <Building className="h-4 w-4 text-gray-medium" />
+                              {getSupplierName(invoice.supplierId)}
+                            </TableCell>
+                            <TableCell>{formatDate(invoice.issueDate)}</TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(invoice.amount)}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Button variant="outline" size="sm">
+                  Voir toutes les factures d'achat
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Customer Invoices (Right) */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <CardTitle>Factures de vente</CardTitle>
+                  <Button
+                    className="bg-primary hover:bg-primary-dark"
+                    size="sm"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nouvelle facture
+                  </Button>
+                </div>
+                <CardDescription>
+                  Factures clients à encaisser
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Numéro</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredReceivables().length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8">
+                            <ArrowUp className="mx-auto h-12 w-12 text-gray-300" />
+                            <p className="mt-2 text-gray-medium">Aucune facture trouvée</p>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredReceivables().map((receivable: Receivable) => (
+                          <TableRow key={receivable.id}>
+                            <TableCell className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-gray-medium" />
+                              {receivable.number}
+                            </TableCell>
+                            <TableCell className="flex items-center gap-2">
+                              <Building className="h-4 w-4 text-gray-medium" />
+                              {getCustomerName(receivable.customerId)}
+                            </TableCell>
+                            <TableCell>{formatDate(receivable.issueDate)}</TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(receivable.amount)}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(receivable.status)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Button variant="outline" size="sm">
+                  Voir toutes les factures de vente
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
-}
+};
 
 export default InvoicesPage;

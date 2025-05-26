@@ -1,107 +1,162 @@
 import React from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
+import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  LineChart,
+  Building,
   FileText,
+  BarChart3,
+  CreditCard,
+  ArrowDownCircle,
+  ArrowUpCircle,
   Wallet,
+  Package,
   Users,
   Settings,
+  LogOut,
+  Menu,
   X,
-  UserRound
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SidebarProps {
+  isOpen: boolean;
   onClose: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [location] = useLocation();
 
   const isActive = (path: string) => {
-    return location === path || location.startsWith(path + "/");
+    return location === path;
   };
 
-  const sidebarLinks = [
+  const navItems = [
     {
-      name: "Tableau de Bord",
-      path: "/dashboard",
-      icon: <LayoutDashboard className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Tableau de bord",
+      href: "/",
+      icon: <BarChart3 className="h-5 w-5" />,
     },
     {
-      name: "Situation Financière",
-      path: "/financial-situation",
-      icon: <LineChart className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Fournisseurs",
+      href: "/suppliers",
+      icon: <Building className="h-5 w-5" />,
     },
     {
-      name: "Factures",
-      path: "/invoices",
-      icon: <FileText className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Clients",
+      href: "/customers",
+      icon: <Users className="h-5 w-5" />,
     },
     {
-      name: "Décaissements",
-      path: "/suppliers/payments",
-      icon: <Wallet className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Factures",
+      href: "/invoices",
+      icon: <FileText className="h-5 w-5" />,
     },
     {
-      name: "Fournisseurs",
-      path: "/suppliers",
-      icon: <Users className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Décaissements",
+      href: "/payments",
+      icon: <ArrowDownCircle className="h-5 w-5" />,
     },
     {
-      name: "Clients",
-      path: "/customers",
-      icon: <UserRound className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Encaissements",
+      href: "/receivables",
+      icon: <ArrowUpCircle className="h-5 w-5" />,
     },
     {
-      name: "Paramètres",
-      path: "/settings",
-      icon: <Settings className="w-5 h-5 mr-3 text-gray-medium" />,
+      title: "Situation Financière",
+      href: "/financial-situation",
+      icon: <Wallet className="h-5 w-5" />,
+    },
+    {
+      title: "Paramètres",
+      href: "/settings",
+      icon: <Settings className="h-5 w-5" />,
     },
   ];
 
   return (
-    <div className="flex flex-col w-64 bg-sidebar border-r border-gray-light">
-      <div className="flex items-center justify-between h-16 px-4 bg-sidebar border-b border-gray-light">
-        <h1 className="text-lg font-semibold text-sidebar-foreground">Gesto</h1>
-        <button 
-          className="p-1 rounded-full md:hidden text-gray-medium hover:bg-gray-light"
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="flex flex-col flex-grow overflow-y-auto">
-        <nav className="flex-1 px-2 py-4 space-y-1">
-          {sidebarLinks.map((link) => (
-            <Link
-              key={link.path}
-              href={link.path}
-              onClick={onClose}
-              className={`flex items-center px-2 py-2 text-sm font-medium rounded-md sidebar-link ${
-                isActive(link.path)
-                  ? "active text-sidebar-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}
-            >
-              {link.icon}
-              {link.name}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex h-16 items-center justify-between border-b px-4">
+            <Link href="/">
+              <a className="flex items-center space-x-2">
+                <CreditCard className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold">FinancePro</span>
+              </a>
             </Link>
-          ))}
-        </nav>
-      </div>
-      <div className="p-4 border-t border-gray-light">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
-            TD
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="lg:hidden"
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-sidebar-foreground">Thomas Durand</p>
-            <p className="text-xs text-gray-medium">Administrateur</p>
+
+          {/* Navigation */}
+          <ScrollArea className="flex-1 py-4">
+            <nav className="space-y-1 px-2">
+              {navItems.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <a
+                    className={cn(
+                      "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive(item.href)
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    )}
+                    onClick={() => {
+                      if (window.innerWidth < 1024) {
+                        onClose();
+                      }
+                    }}
+                  >
+                    {React.cloneElement(item.icon, {
+                      className: cn(
+                        "mr-3 h-5 w-5",
+                        isActive(item.href)
+                          ? "text-primary"
+                          : "text-gray-500"
+                      ),
+                    })}
+                    {item.title}
+                  </a>
+                </Link>
+              ))}
+            </nav>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="border-t p-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start text-gray-700"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Déconnexion
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 };
 

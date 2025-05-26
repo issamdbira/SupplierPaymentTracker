@@ -93,7 +93,7 @@ const SuppliersPage: React.FC = () => {
     },
   });
 
-  const { data: suppliers, isLoading } = useQuery({
+  const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ["/api/suppliers"],
   });
 
@@ -200,7 +200,7 @@ const SuppliersPage: React.FC = () => {
   };
 
   const filteredSuppliers = React.useMemo(() => {
-    if (!suppliers) return [];
+    if (!suppliers || !Array.isArray(suppliers)) return [];
     if (!searchQuery.trim()) return suppliers;
 
     const query = searchQuery.toLowerCase();
@@ -459,7 +459,7 @@ const SuppliersPage: React.FC = () => {
                   <FormItem>
                     <FormLabel>Adresse</FormLabel>
                     <FormControl>
-                      <Input placeholder="Adresse complète" {...field} />
+                      <Input placeholder="Adresse du fournisseur" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -473,13 +473,7 @@ const SuppliersPage: React.FC = () => {
                 >
                   Annuler
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-primary hover:bg-primary-dark"
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending ? "Création..." : "Créer le fournisseur"}
-                </Button>
+                <Button type="submit">Créer</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -558,7 +552,7 @@ const SuppliersPage: React.FC = () => {
                   <FormItem>
                     <FormLabel>Adresse</FormLabel>
                     <FormControl>
-                      <Input placeholder="Adresse complète" {...field} />
+                      <Input placeholder="Adresse du fournisseur" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -572,13 +566,7 @@ const SuppliersPage: React.FC = () => {
                 >
                   Annuler
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-primary hover:bg-primary-dark"
-                  disabled={updateMutation.isPending}
-                >
-                  {updateMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
-                </Button>
+                <Button type="submit">Enregistrer</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -587,16 +575,14 @@ const SuppliersPage: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer le fournisseur{" "}
-              <span className="font-semibold">{selectedSupplier?.name}</span> ?
-              Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer ce fournisseur ? Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
@@ -608,9 +594,8 @@ const SuppliersPage: React.FC = () => {
               type="button"
               variant="destructive"
               onClick={confirmDelete}
-              disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
