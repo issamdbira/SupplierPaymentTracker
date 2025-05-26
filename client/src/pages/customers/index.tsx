@@ -32,8 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { CustomerForm, type CustomerFormData } from "./CustomerForm";
-
+import { CustomerForm, type CustomerFormData } from "@/components/customers/CustomerForm";
 interface Customer {
   id: number;
   name: string;
