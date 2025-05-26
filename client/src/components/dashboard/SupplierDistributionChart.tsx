@@ -1,87 +1,82 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface ChartData {
+  name: string;
+  amount: number;
+}
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 const SupplierDistributionChart: React.FC = () => {
-  const { data, isLoading } = useQuery({
+  const { data: chartData = [], isLoading } = useQuery<ChartData[]>({
     queryKey: ["/api/dashboard/supplier-distribution"],
   });
-
-  if (isLoading) {
-    return (
-      <Card className="overflow-hidden">
-        <CardContent className="p-5">
-          <div className="animate-pulse">
-            <div className="h-6 w-2/3 bg-gray-200 rounded"></div>
-            <div className="h-4 w-1/2 bg-gray-200 rounded mt-2"></div>
-            <div className="h-[250px] bg-gray-100 rounded mt-4"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const COLORS = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-  ];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
+      minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribution par fournisseur</CardTitle>
+        </CardHeader>
+        <CardContent className="h-80">
+          <Skeleton className="w-full h-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-2 border rounded shadow">
+          <p className="font-medium">{payload[0].name}</p>
+          <p>{formatCurrency(payload[0].value)}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-5">
-        <h3 className="text-lg font-medium leading-6 text-gray-dark">
-          Répartition par fournisseur
-        </h3>
-        <div className="mt-2">
-          <p className="text-sm text-gray-medium">
-            Top 5 des fournisseurs en montant total
-          </p>
-        </div>
-        <div className="chart-container mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                nameKey="name"
-                dataKey="amount"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
-                label={(entry) => entry.name}
-                labelLine={{ stroke: "hsl(var(--foreground))", strokeWidth: 1 }}
-              >
-                {data.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Legend formatter={(value) => <span style={{ fontSize: 12 }}>{value}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Distribution par fournisseur</CardTitle>
+      </CardHeader>
+      <CardContent className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={Array.isArray(chartData) ? chartData : []}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="amount"
+              nameKey="name"
+              label={({ name }) => name}
+            >
+              {Array.isArray(chartData) && chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

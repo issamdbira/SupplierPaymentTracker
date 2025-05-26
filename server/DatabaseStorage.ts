@@ -113,8 +113,8 @@ export class DatabaseStorage implements IStorage {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
     if (!invoice) return undefined;
     
-    const installments = await db.select().from(installments).where(eq(installments.invoiceId, id));
-    return { invoice, installments };
+    const installmentsList = await db.select().from(installments).where(eq(installments.invoiceId, id));
+    return { invoice, installments: installmentsList };
   }
 
   async getInvoices(): Promise<Invoice[]> {
@@ -315,7 +315,7 @@ export class DatabaseStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const activityWithTimestamp = {
       ...activity,
-      timestamp: activity.timestamp || new Date()
+      timestamp: new Date()
     };
     const [createdActivity] = await db.insert(activities).values(activityWithTimestamp).returning();
     return createdActivity;

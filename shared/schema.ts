@@ -113,6 +113,12 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "card",
 ]);
 
+// Invoice Type Enum
+export const invoiceTypeEnum = pgEnum("invoice_type", [
+  "purchase", // Facture d'achat
+  "sale",     // Facture de vente
+]);
+
 // Invoice Schema (Supplier Payments)
 export const invoices = pgTable("invoices", {
   id: serial("id").primaryKey(),
@@ -126,6 +132,9 @@ export const invoices = pgTable("invoices", {
   category: text("category"),
   reference: text("reference"),
   attachmentUrl: text("attachment_url"),
+  // Champ pour l'intégration future avec le stock
+  affectsStock: boolean("affects_stock").default(true),
+  type: text("type").notNull().default("purchase"), // purchase = achat
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -141,6 +150,8 @@ export const insertInvoiceSchema = createInsertSchema(invoices).pick({
   category: true,
   reference: true,
   attachmentUrl: true,
+  affectsStock: true,
+  type: true,
 });
 
 // Receivable Schema (Customer Payments)
@@ -156,6 +167,9 @@ export const receivables = pgTable("receivables", {
   category: text("category"),
   reference: text("reference"),
   attachmentUrl: text("attachment_url"),
+  // Champ pour l'intégration future avec le stock
+  affectsStock: boolean("affects_stock").default(true),
+  type: text("type").notNull().default("sale"), // sale = vente
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -171,6 +185,8 @@ export const insertReceivableSchema = createInsertSchema(receivables).pick({
   category: true,
   reference: true,
   attachmentUrl: true,
+  affectsStock: true,
+  type: true,
 });
 
 // Payment Installment Schema (For Supplier Payments)
@@ -258,6 +274,121 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   metadata: true,
 });
 
+// Schéma pour les produits (préparation pour le module stock)
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  sku: text("sku").notNull().unique(),
+  description: text("description"),
+  category: text("category"),
+  price: doublePrecision("price").notNull(),
+  cost: doublePrecision("cost"),
+  currentStock: integer("current_stock").default(0),
+  minStock: integer("min_stock").default(0),
+  unit: text("unit").default("unité"),
+  supplierId: integer("supplier_id"),
+  imageUrl: text("image_url"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProductSchema = createInsertSchema(products).pick({
+  name: true,
+  sku: true,
+  description: true,
+  category: true,
+  price: true,
+  cost: true,
+  currentStock: true,
+  minStock: true,
+  unit: true,
+  supplierId: true,
+  imageUrl: true,
+  isActive: true,
+});
+
+// Schéma pour les mouvements de stock (préparation pour le module stock)
+export const stockMovements = pgTable("stock_movements", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  type: text("type").notNull(), // in, out
+  reason: text("reason").notNull(), // purchase, sale, adjustment, return
+  sourceDocumentType: text("source_document_type"), // invoice, receivable
+  sourceDocumentId: integer("source_document_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by"),
+});
+
+export const insertStockMovementSchema = createInsertSchema(stockMovements).pick({
+  productId: true,
+  quantity: true,
+  type: true,
+  reason: true,
+  sourceDocumentType: true,
+  sourceDocumentId: true,
+  notes: true,
+  createdBy: true,
+});
+
+// Schéma pour les lignes de facture (préparation pour le module stock)
+export const invoiceLines = pgTable("invoice_lines", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull(),
+  productId: integer("product_id").notNull(),
+  description: text("description"),
+  quantity: doublePrecision("quantity").notNull(),
+  unitPrice: doublePrecision("unit_price").notNull(),
+  totalPrice: doublePrecision("total_price").notNull(),
+  taxRate: doublePrecision("tax_rate").default(0),
+  taxAmount: doublePrecision("tax_amount").default(0),
+  discount: doublePrecision("discount").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).pick({
+  invoiceId: true,
+  productId: true,
+  description: true,
+  quantity: true,
+  unitPrice: true,
+  totalPrice: true,
+  taxRate: true,
+  taxAmount: true,
+  discount: true,
+});
+
+// Schéma pour les lignes de facture client (préparation pour le module stock)
+export const receivableLines = pgTable("receivable_lines", {
+  id: serial("id").primaryKey(),
+  receivableId: integer("receivable_id").notNull(),
+  productId: integer("product_id").notNull(),
+  description: text("description"),
+  quantity: doublePrecision("quantity").notNull(),
+  unitPrice: doublePrecision("unit_price").notNull(),
+  totalPrice: doublePrecision("total_price").notNull(),
+  taxRate: doublePrecision("tax_rate").default(0),
+  taxAmount: doublePrecision("tax_amount").default(0),
+  discount: doublePrecision("discount").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertReceivableLineSchema = createInsertSchema(receivableLines).pick({
+  receivableId: true,
+  productId: true,
+  description: true,
+  quantity: true,
+  unitPrice: true,
+  totalPrice: true,
+  taxRate: true,
+  taxAmount: true,
+  discount: true,
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -282,3 +413,15 @@ export type InsertBankTransaction = z.infer<typeof insertBankTransactionSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+
+export type StockMovement = typeof stockMovements.$inferSelect;
+export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
+
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
+export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
+
+export type ReceivableLine = typeof receivableLines.$inferSelect;
+export type InsertReceivableLine = z.infer<typeof insertReceivableLineSchema>;

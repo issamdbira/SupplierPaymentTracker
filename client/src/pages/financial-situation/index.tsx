@@ -1,67 +1,100 @@
 import React from "react";
-import { Helmet } from "react-helmet";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { Helmet } from "react-helmet";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { ArrowDown, ArrowUp, Wallet } from "lucide-react";
 
-const FinancialSituation: React.FC = () => {
-  const { data: forecast, isLoading: isLoadingForecast } = useQuery({
-    queryKey: ["/api/dashboard/forecast"],
+interface Transaction {
+  id: number;
+  accountId: string;
+  transactionDate: string;
+  amount: number;
+  description: string;
+  reference: string;
+  type: string;
+  category: string;
+  isMatched: boolean;
+}
+
+const FinancialSituationPage: React.FC = () => {
+  const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
+    queryKey: ["/api/financial-situation"],
   });
 
-  const { data: supplierDistribution, isLoading: isLoadingDistribution } = useQuery({
-    queryKey: ["/api/dashboard/supplier-distribution"],
-  });
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy", { locale: fr });
+    } catch (error) {
+      return dateString;
+    }
+  };
 
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["/api/dashboard/stats"],
-  });
-
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(value);
+    }).format(amount);
   };
 
-  const COLORS = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-  ];
+  const getInflows = () => {
+    if (!Array.isArray(transactions)) return [];
+    return transactions.filter(t => t.type === "credit");
+  };
 
-  // Mock data for cash flow chart - in a real app, this would come from the API
-  const cashFlowData = [
-    { name: "Jan", entrees: 80000, sorties: 65000 },
-    { name: "Fév", entrees: 75000, sorties: 68000 },
-    { name: "Mar", entrees: 90000, sorties: 72000 },
-    { name: "Avr", entrees: 86000, sorties: 80000 },
-    { name: "Mai", entrees: 92000, sorties: 78000 },
-    { name: "Jun", entrees: 88000, sorties: 82000 },
-  ];
+  const getOutflows = () => {
+    if (!Array.isArray(transactions)) return [];
+    return transactions.filter(t => t.type === "debit");
+  };
+
+  const getTotalInflow = () => {
+    return getInflows().reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  };
+
+  const getTotalOutflow = () => {
+    return getOutflows().reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  };
+
+  const getNetCashflow = () => {
+    return getTotalInflow() - getTotalOutflow();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-6">
+        <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+          <h1 className="text-2xl font-semibold text-gray-dark">Situation Financière</h1>
+          <div className="mt-6 animate-pulse">
+            <div className="h-12 bg-gray-200 rounded w-full mb-4"></div>
+            <div className="h-96 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Helmet>
-        <title>Situation Financière | Gesto</title>
-        <meta name="description" content="Analysez votre situation financière complète, incluant les flux de trésorerie et les prévisions de décaissement." />
+        <title>Situation Financière | FinancePro</title>
+        <meta name="description" content="Consultez votre situation financière, analysez vos flux de trésorerie et suivez vos encaissements et décaissements." />
       </Helmet>
       
       <div className="py-6">
@@ -70,162 +103,193 @@ const FinancialSituation: React.FC = () => {
         </div>
 
         <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Montant en attente</CardTitle>
+                <CardDescription>Entrées</CardDescription>
+                <CardTitle className="text-2xl text-green-600">{formatCurrency(getTotalInflow())}</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoadingStats ? (
-                  <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-                ) : (
-                  <div className="text-3xl font-bold text-primary">
-                    {formatCurrency(stats?.pendingAmount || 0)}
-                  </div>
-                )}
-                <p className="text-sm text-gray-medium mt-1">Total des factures à payer</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Paiements prévus ce mois</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingForecast ? (
-                  <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-                ) : (
-                  <div className="text-3xl font-bold text-secondary">
-                    {formatCurrency(forecast?.[0]?.amount || 0)}
-                  </div>
-                )}
-                <p className="text-sm text-gray-medium mt-1">Total des échéances du mois</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Factures à échéance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingStats ? (
-                  <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-                ) : (
-                  <div className="text-3xl font-bold text-destructive">
-                    {stats?.dueInvoices || 0}
-                  </div>
-                )}
-                <p className="text-sm text-gray-medium mt-1">Nécessitant une action urgente</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Chart Section */}
-          <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-            {/* Decaissements Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Prévision des Décaissements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  {isLoadingForecast ? (
-                    <div className="w-full h-full bg-gray-100 rounded animate-pulse"></div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={forecast}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis tickFormatter={formatCurrency} />
-                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                        <Legend />
-                        <Bar
-                          dataKey="amount"
-                          name="Montant"
-                          fill="hsl(var(--chart-2))"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <ArrowUp className="mr-1 h-4 w-4 text-green-500" />
+                  Total des encaissements
                 </div>
               </CardContent>
             </Card>
-
-            {/* Cash Flow Chart */}
+            
             <Card>
-              <CardHeader>
-                <CardTitle>Flux de Trésorerie</CardTitle>
+              <CardHeader className="pb-2">
+                <CardDescription>Sorties</CardDescription>
+                <CardTitle className="text-2xl text-red-600">{formatCurrency(getTotalOutflow())}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={cashFlowData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis tickFormatter={formatCurrency} />
-                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="entrees"
-                        name="Entrées"
-                        stroke="hsl(var(--chart-3))"
-                        activeDot={{ r: 8 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="sorties"
-                        name="Sorties"
-                        stroke="hsl(var(--chart-4))"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <ArrowDown className="mr-1 h-4 w-4 text-red-500" />
+                  Total des décaissements
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Solde</CardDescription>
+                <CardTitle className={`text-2xl ${getNetCashflow() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(getNetCashflow())}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Wallet className="mr-1 h-4 w-4" />
+                  Différence entrées/sorties
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Supplier Distribution Pie Chart */}
-          <Card className="mt-8">
+          {/* Transactions Table with Tabs */}
+          <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Répartition des Décaissements par Fournisseur</CardTitle>
+              <CardTitle>Flux financiers</CardTitle>
+              <CardDescription>
+                Consultez tous vos mouvements financiers
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                {isLoadingDistribution ? (
-                  <div className="w-full h-full bg-gray-100 rounded animate-pulse"></div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={supplierDistribution}
-                        nameKey="name"
-                        dataKey="amount"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        fill="#8884d8"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {supplierDistribution?.map((entry: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+              <Tabs defaultValue="all">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="all">Tous les flux</TabsTrigger>
+                  <TabsTrigger value="inflows">Encaissements</TabsTrigger>
+                  <TabsTrigger value="outflows">Décaissements</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Référence</TableHead>
+                          <TableHead>Catégorie</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead className="text-right">Montant</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8">
+                              <Wallet className="mx-auto h-12 w-12 text-gray-300" />
+                              <p className="mt-2 text-gray-medium">Aucune transaction trouvée</p>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          transactions.map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
+                              <TableCell>{transaction.description}</TableCell>
+                              <TableCell>{transaction.reference}</TableCell>
+                              <TableCell>{transaction.category}</TableCell>
+                              <TableCell>
+                                {transaction.type === "credit" ? (
+                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                    Entrée
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                                    Sortie
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className={`text-right font-medium ${transaction.type === "credit" ? 'text-green-600' : 'text-red-600'}`}>
+                                {transaction.type === "credit" ? "+" : "-"}
+                                {formatCurrency(Math.abs(transaction.amount))}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="inflows">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Référence</TableHead>
+                          <TableHead>Catégorie</TableHead>
+                          <TableHead className="text-right">Montant</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getInflows().length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8">
+                              <ArrowUp className="mx-auto h-12 w-12 text-gray-300" />
+                              <p className="mt-2 text-gray-medium">Aucun encaissement trouvé</p>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          getInflows().map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
+                              <TableCell>{transaction.description}</TableCell>
+                              <TableCell>{transaction.reference}</TableCell>
+                              <TableCell>{transaction.category}</TableCell>
+                              <TableCell className="text-right font-medium text-green-600">
+                                +{formatCurrency(Math.abs(transaction.amount))}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="outflows">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Référence</TableHead>
+                          <TableHead>Catégorie</TableHead>
+                          <TableHead className="text-right">Montant</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getOutflows().length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8">
+                              <ArrowDown className="mx-auto h-12 w-12 text-gray-300" />
+                              <p className="mt-2 text-gray-medium">Aucun décaissement trouvé</p>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          getOutflows().map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
+                              <TableCell>{transaction.description}</TableCell>
+                              <TableCell>{transaction.reference}</TableCell>
+                              <TableCell>{transaction.category}</TableCell>
+                              <TableCell className="text-right font-medium text-red-600">
+                                -{formatCurrency(Math.abs(transaction.amount))}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
@@ -234,4 +298,4 @@ const FinancialSituation: React.FC = () => {
   );
 };
 
-export default FinancialSituation;
+export default FinancialSituationPage;

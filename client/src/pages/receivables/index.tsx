@@ -31,51 +31,51 @@ import {
 import { Search, Calendar, FileText, Building, ArrowDown, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface Invoice {
+interface Receivable {
   id: number;
-  invoiceNumber: string;
+  number: string;
   amount: number;
   issueDate: string;
   dueDate: string;
   status: string;
-  supplierId: number;
+  customerId: number;
   description?: string;
 }
 
-interface Installment {
+interface ReceivableInstallment {
   id: number;
-  invoiceId: number;
+  receivableId: number;
   installmentNumber: number;
   amount: number;
   dueDate: string;
   status: string;
   paymentDate?: string;
-  paymentReference?: string;
+  reference?: string;
 }
 
-interface Supplier {
+interface Customer {
   id: number;
   name: string;
 }
 
-const PaymentsPage: React.FC = () => {
+const ReceivablesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string | null>(null);
 
-  const { data: installments = [], isLoading: isLoadingInstallments } = useQuery({
-    queryKey: ["/api/installments"],
+  const { data: receivableInstallments = [], isLoading: isLoadingInstallments } = useQuery<ReceivableInstallment[]>({
+    queryKey: ["/api/receivable-installments"],
   });
 
-  const { data: invoices = [], isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ["/api/invoices"],
+  const { data: receivables = [], isLoading: isLoadingReceivables } = useQuery<Receivable[]>({
+    queryKey: ["/api/receivables"],
   });
 
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
-    queryKey: ["/api/suppliers"],
+  const { data: customers = [], isLoading: isLoadingCustomers } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
   });
 
-  const isLoading = isLoadingInstallments || isLoadingInvoices || isLoadingSuppliers;
+  const isLoading = isLoadingInstallments || isLoadingReceivables || isLoadingCustomers;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -128,9 +128,9 @@ const PaymentsPage: React.FC = () => {
   };
 
   const filteredInstallments = () => {
-    if (!Array.isArray(installments)) return [];
+    if (!Array.isArray(receivableInstallments)) return [];
     
-    return installments.filter((installment: Installment) => {
+    return receivableInstallments.filter((installment: ReceivableInstallment) => {
       // Status filter
       if (statusFilter && installment.status !== statusFilter) {
         return false;
@@ -161,16 +161,16 @@ const PaymentsPage: React.FC = () => {
       // Search term
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        const invoiceId = installment.invoiceId;
-        const invoice = Array.isArray(invoices) ? invoices.find((inv: Invoice) => inv.id === invoiceId) : null;
-        const supplierId = invoice?.supplierId;
-        const supplier = Array.isArray(suppliers) ? suppliers.find((s: Supplier) => s.id === supplierId) : null;
+        const receivableId = installment.receivableId;
+        const receivable = Array.isArray(receivables) ? receivables.find((rec: Receivable) => rec.id === receivableId) : null;
+        const customerId = receivable?.customerId;
+        const customer = Array.isArray(customers) ? customers.find((c: Customer) => c.id === customerId) : null;
         
-        // Search in invoice number or supplier name
+        // Search in receivable number or customer name
         return (
-          invoice?.invoiceNumber.toLowerCase().includes(searchLower) ||
-          supplier?.name.toLowerCase().includes(searchLower) ||
-          installment.paymentReference?.toLowerCase().includes(searchLower)
+          receivable?.number.toLowerCase().includes(searchLower) ||
+          customer?.name.toLowerCase().includes(searchLower) ||
+          installment.reference?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -178,50 +178,50 @@ const PaymentsPage: React.FC = () => {
     });
   };
 
-  const getInvoiceNumber = (invoiceId: number) => {
-    const invoice = Array.isArray(invoices) ? invoices.find((inv: Invoice) => inv.id === invoiceId) : null;
-    return invoice?.invoiceNumber || `#${invoiceId}`;
+  const getReceivableNumber = (receivableId: number) => {
+    const receivable = Array.isArray(receivables) ? receivables.find((rec: Receivable) => rec.id === receivableId) : null;
+    return receivable?.number || `#${receivableId}`;
   };
 
-  const getSupplierName = (invoiceId: number) => {
-    const invoice = Array.isArray(invoices) ? invoices.find((inv: Invoice) => inv.id === invoiceId) : null;
-    if (!invoice) return "Inconnu";
+  const getCustomerName = (receivableId: number) => {
+    const receivable = Array.isArray(receivables) ? receivables.find((rec: Receivable) => rec.id === receivableId) : null;
+    if (!receivable) return "Inconnu";
     
-    const supplier = Array.isArray(suppliers) ? suppliers.find((s: Supplier) => s.id === invoice.supplierId) : null;
-    return supplier?.name || "Inconnu";
+    const customer = Array.isArray(customers) ? customers.find((c: Customer) => c.id === receivable.customerId) : null;
+    return customer?.name || "Inconnu";
   };
 
   const getTotalAmount = () => {
-    if (!Array.isArray(installments)) return 0;
-    return installments.reduce((sum, installment: Installment) => sum + installment.amount, 0);
+    if (!Array.isArray(receivableInstallments)) return 0;
+    return receivableInstallments.reduce((sum, installment: ReceivableInstallment) => sum + installment.amount, 0);
   };
 
   const getPendingAmount = () => {
-    if (!Array.isArray(installments)) return 0;
-    return installments
-      .filter((installment: Installment) => installment.status === "pending" || installment.status === "overdue")
-      .reduce((sum, installment: Installment) => sum + installment.amount, 0);
+    if (!Array.isArray(receivableInstallments)) return 0;
+    return receivableInstallments
+      .filter((installment: ReceivableInstallment) => installment.status === "pending" || installment.status === "overdue")
+      .reduce((sum, installment: ReceivableInstallment) => sum + installment.amount, 0);
   };
 
   const getPaidAmount = () => {
-    if (!Array.isArray(installments)) return 0;
-    return installments
-      .filter((installment: Installment) => installment.status === "paid")
-      .reduce((sum, installment: Installment) => sum + installment.amount, 0);
+    if (!Array.isArray(receivableInstallments)) return 0;
+    return receivableInstallments
+      .filter((installment: ReceivableInstallment) => installment.status === "paid")
+      .reduce((sum, installment: ReceivableInstallment) => sum + installment.amount, 0);
   };
 
   const getOverdueAmount = () => {
-    if (!Array.isArray(installments)) return 0;
-    return installments
-      .filter((installment: Installment) => installment.status === "overdue")
-      .reduce((sum, installment: Installment) => sum + installment.amount, 0);
+    if (!Array.isArray(receivableInstallments)) return 0;
+    return receivableInstallments
+      .filter((installment: ReceivableInstallment) => installment.status === "overdue")
+      .reduce((sum, installment: ReceivableInstallment) => sum + installment.amount, 0);
   };
 
   if (isLoading) {
     return (
       <div className="py-6">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-          <h1 className="text-2xl font-semibold text-gray-dark">Décaissements</h1>
+          <h1 className="text-2xl font-semibold text-gray-dark">Encaissements</h1>
           <div className="mt-6 animate-pulse">
             <div className="h-12 bg-gray-200 rounded w-full mb-4"></div>
             <div className="h-96 bg-gray-200 rounded w-full"></div>
@@ -234,13 +234,13 @@ const PaymentsPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Décaissements | FinancePro</title>
-        <meta name="description" content="Gérez vos paiements aux fournisseurs, suivez les échéances et planifiez vos décaissements." />
+        <title>Encaissements | FinancePro</title>
+        <meta name="description" content="Gérez vos encaissements clients, suivez les échéances et planifiez vos entrées de trésorerie." />
       </Helmet>
       
       <div className="py-6">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-          <h1 className="text-2xl font-semibold text-gray-dark">Décaissements</h1>
+          <h1 className="text-2xl font-semibold text-gray-dark">Encaissements</h1>
         </div>
 
         <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
@@ -260,12 +260,12 @@ const PaymentsPage: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Payé</CardDescription>
+                <CardDescription>Encaissé</CardDescription>
                 <CardTitle className="text-2xl text-green-600">{formatCurrency(getPaidAmount())}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-muted-foreground">
-                  Montant total payé
+                  Montant total encaissé
                 </div>
               </CardContent>
             </Card>
@@ -277,7 +277,7 @@ const PaymentsPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-muted-foreground">
-                  Montant restant à payer
+                  Montant restant à encaisser
                 </div>
               </CardContent>
             </Card>
@@ -298,9 +298,9 @@ const PaymentsPage: React.FC = () => {
           {/* Filters and Search */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Échéances de paiement</CardTitle>
+              <CardTitle>Échéances d'encaissement</CardTitle>
               <CardDescription>
-                Gérez les échéances de paiement pour vos fournisseurs
+                Gérez les échéances d'encaissement pour vos clients
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -308,7 +308,7 @@ const PaymentsPage: React.FC = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-medium h-4 w-4" />
                   <Input
-                    placeholder="Rechercher par fournisseur ou numéro de facture..."
+                    placeholder="Rechercher par client ou numéro de facture..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -356,11 +356,11 @@ const PaymentsPage: React.FC = () => {
                     <TableRow>
                       <TableHead>Échéance</TableHead>
                       <TableHead>Facture</TableHead>
-                      <TableHead>Fournisseur</TableHead>
+                      <TableHead>Client</TableHead>
                       <TableHead>Date d'échéance</TableHead>
                       <TableHead>Montant</TableHead>
                       <TableHead>Statut</TableHead>
-                      <TableHead>Date de paiement</TableHead>
+                      <TableHead>Date d'encaissement</TableHead>
                       <TableHead>Référence</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -368,21 +368,21 @@ const PaymentsPage: React.FC = () => {
                     {filteredInstallments().length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center py-8">
-                          <ArrowDown className="mx-auto h-12 w-12 text-gray-300" />
+                          <ArrowUp className="mx-auto h-12 w-12 text-gray-300" />
                           <p className="mt-2 text-gray-medium">Aucune échéance trouvée</p>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredInstallments().map((installment: Installment) => (
+                      filteredInstallments().map((installment: ReceivableInstallment) => (
                         <TableRow key={installment.id}>
                           <TableCell>#{installment.installmentNumber}</TableCell>
                           <TableCell className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-gray-medium" />
-                            {getInvoiceNumber(installment.invoiceId)}
+                            {getReceivableNumber(installment.receivableId)}
                           </TableCell>
                           <TableCell className="flex items-center gap-2">
                             <Building className="h-4 w-4 text-gray-medium" />
-                            {getSupplierName(installment.invoiceId)}
+                            {getCustomerName(installment.receivableId)}
                           </TableCell>
                           <TableCell className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-medium" />
@@ -396,7 +396,7 @@ const PaymentsPage: React.FC = () => {
                             {installment.paymentDate ? formatDate(installment.paymentDate) : "-"}
                           </TableCell>
                           <TableCell>
-                            {installment.paymentReference || "-"}
+                            {installment.reference || "-"}
                           </TableCell>
                         </TableRow>
                       ))
@@ -412,4 +412,4 @@ const PaymentsPage: React.FC = () => {
   );
 };
 
-export default PaymentsPage;
+export default ReceivablesPage;
